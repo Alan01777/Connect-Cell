@@ -64,12 +64,15 @@ with col5:
         .replace("x", "."),
     )
 with col7:
-    st.metric(
-        "Valor Recebido por Valderi",
-        f"R$ {profit_emploee['VALDERI']:,.2f}".replace(",", "x")
-        .replace(".", ",")
-        .replace("x", "."),
-    )
+    if profit_emploee["VALDERI"]:
+        st.metric(
+            "Valor Recebido por Valderi",
+            f"R$ {profit_emploee['VALDERI']:,.2f}".replace(",", "x")
+            .replace(".", ",")
+            .replace("x", "."),
+        )
+    else:
+        st.write("Nenhum dado disponível para o valor recebido por Valderi.")
 
 st.markdown(
     """
@@ -116,7 +119,7 @@ fig.update_traces(
     textposition="outside",
     cliponaxis=False,
 )
-fig.update_yaxes(tickformat=",,.2f")
+fig.update_yaxes(tickformat=",.2f")
 st.plotly_chart(fig)
 
 st.markdown(
@@ -168,7 +171,7 @@ with col2:
         )
         st.plotly_chart(fig)
     else:
-        st.write("Nenhum dado disponível para a distribuição dos status de serviço.")
+        st.write("Nenhum dado disponível para a distribuição dos status de serviço.")
 
 st.markdown(
     """

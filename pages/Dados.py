@@ -34,17 +34,17 @@ liquid_profit = df["LUCRO FINAL"].sum()
 with col1:
     st.metric("Total de pedidos", total_requests)
 with col2:
-    st.metric("Total gasto com peças", f"R$ {total_spent: .2f}")
+    st.metric("Total gasto com peças", f"R$ {total_spent: ,.2f}")
 with col3:
-    st.metric("Total recebido", f"R$ {service_prices: .2f}")
+    st.metric("Total recebido", f"R$ {service_prices: ,.2f}")
 with col4:
-    st.metric("Lucro final", f"R$ {liquid_profit: .2f}")
+    st.metric("Lucro final", f"R$ {liquid_profit: ,.2f}")
 with col5:
-    st.metric("Valor Recebido por Tiago", f"R$ {profit_emploee['TIAGO']: .2f}")
+    st.metric("Valor Recebido por Tiago", f"R$ {profit_emploee['TIAGO']: ,.2f}")
 with col6:
     st.write("")
 with col7:
-    st.metric("Valor Recebido por Valderi", f"R$ {profit_emploee['VALDERI']: .2f}")
+    st.metric("Valor Recebido por Valderi", f"R$ {profit_emploee['VALDERI']: ,.2f}")
     
 st.markdown(
     """
@@ -91,7 +91,7 @@ fig.update_traces(
     textposition="outside",
     cliponaxis=False,
 )
-fig.update_yaxes(tickformat=",.2f")
+fig.update_yaxes(tickformat=",,.2f")
 st.plotly_chart(fig)
 
 st.markdown(

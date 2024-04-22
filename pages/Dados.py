@@ -45,6 +45,12 @@ with col6:
     st.write("")
 with col7:
     st.metric("Valor Recebido por Valderi", f"R$ {profit_emploee['VALDERI']: .2f}")
+    
+st.markdown(
+    """
+    **OBS:** Os valores acima representam informações gerais sobre os dados financeiros da empresa.
+    """
+)
 
 
 # TENDÊNCIA DO LUCRO AO LONGO DO TEMPO
@@ -57,6 +63,12 @@ fig = px.line(
 )
 fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="LUCRO (R$)")
 st.plotly_chart(fig)
+
+st.markdown(
+    """
+    **OBS:** O gráfico acima representa a tendência do lucro final obtido pela empresa ao longo do tempo.
+    """
+)
 
 # DESEMPENHO FINANCEIRO POR TÉCNICO
 st.header("Desempenho financeiro por técnico")
@@ -81,6 +93,12 @@ fig.update_traces(
 )
 fig.update_yaxes(tickformat=",.2f")
 st.plotly_chart(fig)
+
+st.markdown(
+    """
+    **OBS:** Os gráficos acima representam o lucro final obtido pela empresa e o desempenho financeiro dos técnicos Tiago e Valderi ao longo do tempo.
+    """
+)
 
 
 st.header("Distribuição de dados")
@@ -126,3 +144,9 @@ with col2:
         st.plotly_chart(fig)
     else:
         st.write("Nenhum dado disponível para a distribuição dos status de serviço.")
+        
+st.markdown(
+    """
+    **OBS:** Dados em estado como N/A ou null não foram levados em consideração para os gráficos de distribuição de dados.
+    """
+)

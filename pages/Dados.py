@@ -38,16 +38,39 @@ liquid_profit = df["LUCRO FINAL"].sum()
 with col1:
     st.metric("Total de serviços", total_requests)
 with col2:
-    st.metric("Total gasto com peças", f"R$ {total_spent:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."))
+    st.metric(
+        "Total gasto com peças",
+        f"R$ {total_spent:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."),
+    )
 with col3:
-    st.metric("Total recebido", f"R$ {service_prices:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."))
+    st.metric(
+        "Total recebido",
+        f"R$ {service_prices:,.2f}".replace(",", "x")
+        .replace(".", ",")
+        .replace("x", "."),
+    )
 with col4:
-    st.metric("Lucro final", f"R$ {liquid_profit:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."))
+    st.metric(
+        "Lucro final",
+        f"R$ {liquid_profit:,.2f}".replace(",", "x")
+        .replace(".", ",")
+        .replace("x", "."),
+    )
 with col5:
-    st.metric("Valor Recebido por Tiago", f"R$ {profit_emploee['TIAGO']:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."))
+    st.metric(
+        "Valor Recebido por Tiago",
+        f"R$ {profit_emploee['TIAGO']:,.2f}".replace(",", "x")
+        .replace(".", ",")
+        .replace("x", "."),
+    )
 with col7:
-    st.metric("Valor Recebido por Valderi", f"R$ {profit_emploee['VALDERI']:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."))
-    
+    st.metric(
+        "Valor Recebido por Valderi",
+        f"R$ {profit_emploee['VALDERI']:,.2f}".replace(",", "x")
+        .replace(".", ",")
+        .replace("x", "."),
+    )
+
 st.markdown(
     """
     Os valores acima representam informações gerais sobre os dados financeiros da empresa.
@@ -146,7 +169,7 @@ with col2:
         st.plotly_chart(fig)
     else:
         st.write("Nenhum dado disponível para a distribuição dos status de serviço.")
-        
+
 st.markdown(
     """
     Dados em estado como N/A ou null não foram levados em consideração para os gráficos de distribuição de dados.

@@ -9,6 +9,11 @@ from utils import DateFilter
 page_settings("Dashboard", "📊")
 
 st.title("Dados financeiros da empresa")
+st.markdown(
+    """
+    Os valores abaixo são baseados nos dados financeiros e operacionais fornecidos pela empresa.
+    """
+)
 
 df = DataLoader().load_data()
 
@@ -30,25 +35,22 @@ service_prices = df["VALOR TOTAL DO SERVIÇO"].sum()
 
 profit_emploee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
 liquid_profit = df["LUCRO FINAL"].sum()
-
 with col1:
-    st.metric("Total de pedidos", total_requests)
+    st.metric("Total de serviços", total_requests)
 with col2:
-    st.metric("Total gasto com peças", f"R$ {total_spent: ,.2f}")
+    st.metric("Total gasto com peças", f"R$ {total_spent:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."))
 with col3:
-    st.metric("Total recebido", f"R$ {service_prices: ,.2f}")
+    st.metric("Total recebido", f"R$ {service_prices:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."))
 with col4:
-    st.metric("Lucro final", f"R$ {liquid_profit: ,.2f}")
+    st.metric("Lucro final", f"R$ {liquid_profit:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."))
 with col5:
-    st.metric("Valor Recebido por Tiago", f"R$ {profit_emploee['TIAGO']: ,.2f}")
-with col6:
-    st.write("")
+    st.metric("Valor Recebido por Tiago", f"R$ {profit_emploee['TIAGO']:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."))
 with col7:
-    st.metric("Valor Recebido por Valderi", f"R$ {profit_emploee['VALDERI']: ,.2f}")
+    st.metric("Valor Recebido por Valderi", f"R$ {profit_emploee['VALDERI']:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."))
     
 st.markdown(
     """
-    **OBS:** Os valores acima representam informações gerais sobre os dados financeiros da empresa.
+    Os valores acima representam informações gerais sobre os dados financeiros da empresa.
     """
 )
 
@@ -66,7 +68,7 @@ st.plotly_chart(fig)
 
 st.markdown(
     """
-    **OBS:** O gráfico acima representa a tendência do lucro final obtido pela empresa ao longo do tempo.
+    O gráfico acima representa a tendência do lucro final obtido pela empresa ao longo do tempo.
     """
 )
 
@@ -96,7 +98,7 @@ st.plotly_chart(fig)
 
 st.markdown(
     """
-    **OBS:** Os gráficos acima representam o lucro final obtido pela empresa e o desempenho financeiro dos técnicos Tiago e Valderi ao longo do tempo.
+    Os gráficos acima representam o lucro final obtido pela empresa e o desempenho financeiro dos técnicos Tiago e Valderi ao longo do tempo.
     """
 )
 
@@ -147,6 +149,6 @@ with col2:
         
 st.markdown(
     """
-    **OBS:** Dados em estado como N/A ou null não foram levados em consideração para os gráficos de distribuição de dados.
+    Dados em estado como N/A ou null não foram levados em consideração para os gráficos de distribuição de dados.
     """
 )

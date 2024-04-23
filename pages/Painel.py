@@ -5,6 +5,7 @@ import plotly.express as px
 from utils import DataLoader
 from settings import page_settings
 from utils import DateFilter
+from utils import Formatting
 
 
 def load_data():
@@ -17,26 +18,30 @@ def display_general_info(df):
     col5, col6, col7 = st.columns(3)
 
     total_requests = len(df.index)
-    total_spent = df["(R$)PEÇA"].sum()
-    service_prices = df["VALOR TOTAL DO SERVIÇO"].sum()
+    total_spent = Formatting.format_monetary(df["(R$)PEÇA"].sum())
+    service_prices = Formatting.format_monetary(df["VALOR TOTAL DO SERVIÇO"].sum())
 
     profit_employee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
-    liquid_profit = df["LUCRO FINAL"].sum()
+    liquid_profit = Formatting.format_monetary(df["LUCRO FINAL"].sum())
 
     with col1:
         st.metric("Total de serviços", total_requests)
     with col2:
-        st.metric("Total gasto com peças", f"R$ {total_spent:,.2f}")
+        st.metric("Total gasto com peças", total_spent)
     with col3:
-        st.metric("Total recebido", f"R$ {service_prices:,.2f}")
+        st.metric("Total recebido", service_prices)
     with col4:
-        st.metric("Lucro final", f"R$ {liquid_profit:,.2f}")
+        st.metric("Lucro final", liquid_profit)
     with col5:
-        st.metric("Valor Recebido por Tiago", f"R$ {profit_employee['TIAGO']:,.2f}")
+        st.metric(
+            "Valor Recebido por Tiago",
+            Formatting.format_monetary(profit_employee["TIAGO"]),
+        )
     with col7:
         if "VALDERI" in profit_employee.index:
             st.metric(
-                "Valor Recebido por Valderi", f"R$ {profit_employee['VALDERI']:,.2f}"
+                "Valor Recebido por Valderi",
+                Formatting.format_monetary(profit_employee["VALDERI"]),
             )
         else:
             st.write("Nenhum dado disponível para o valor recebido por Valderi.")
@@ -144,8 +149,8 @@ def display_avarage_service_price(df):
 
     fig.update_layout(
         showlegend=False,
-        xaxis=dict(title="Técnico"),
-        yaxis=dict(title="Média Recebida (R$)"),
+        xaxis=dict(title="Média Recebida (R$)"),
+        yaxis=dict(title="Técnico"),
     )
 
     st.plotly_chart(fig)

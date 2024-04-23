@@ -6,175 +6,225 @@ from utils import DataLoader
 from settings import page_settings
 from utils import DateFilter
 
-page_settings("Dashboard", "📊")
 
-st.title("Dados financeiros da empresa")
-st.markdown(
-    """
-    Os valores abaixo são baseados nos dados financeiros e operacionais fornecidos pela empresa.
-    """
-)
+def load_data():
+    return DataLoader().load_data()
 
-df = DataLoader().load_data()
 
-# Create an instance of DateFilter with df and the date column name
-date_filter = DateFilter(df, "DATA")
+def display_general_info(df):
+    st.header("Informações Gerais")
+    col1, col2, col3, col4 = st.columns(4)
+    col5, col6, col7 = st.columns(3)
 
-# Filter the DataFrame by the selected date range
-df = date_filter.filter_by_date()
+    total_requests = len(df.index)
+    total_spent = df["(R$)PEÇA"].sum()
+    service_prices = df["VALOR TOTAL DO SERVIÇO"].sum()
 
-# DADOS GERAIS
+    profit_employee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
+    liquid_profit = df["LUCRO FINAL"].sum()
 
-st.header("Informações Gerais")
-col1, col2, col3, col4 = st.columns(4)
-col5, col6, col7 = st.columns(3)
+    with col1:
+        st.metric("Total de serviços", total_requests)
+    with col2:
+        st.metric("Total gasto com peças", f"R$ {total_spent:,.2f}")
+    with col3:
+        st.metric("Total recebido", f"R$ {service_prices:,.2f}")
+    with col4:
+        st.metric("Lucro final", f"R$ {liquid_profit:,.2f}")
+    with col5:
+        st.metric("Valor Recebido por Tiago", f"R$ {profit_employee['TIAGO']:,.2f}")
+    with col7:
+        if "VALDERI" in profit_employee.index:
+            st.metric(
+                "Valor Recebido por Valderi", f"R$ {profit_employee['VALDERI']:,.2f}"
+            )
+        else:
+            st.write("Nenhum dado disponível para o valor recebido por Valderi.")
 
-total_requests = len(df.index)
-total_spent = df["(R$)PEÇA"].sum()
-service_prices = df["VALOR TOTAL DO SERVIÇO"].sum()
 
-profit_emploee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
-liquid_profit = df["LUCRO FINAL"].sum()
-with col1:
-    st.metric("Total de serviços", total_requests)
-with col2:
-    st.metric(
-        "Total gasto com peças",
-        f"R$ {total_spent:,.2f}".replace(",", "x").replace(".", ",").replace("x", "."),
+def display_profit_trend(df):
+    st.header("Tendência do lucro")
+    fig = px.line(
+        df.set_index("DATA")["LUCRO FINAL"].groupby(pd.Grouper(freq="ME")).sum(),
+        markers=True,
+        width=1100,
+        color_discrete_map={"LUCRO FINAL": "#CD6A13"},
     )
-with col3:
-    st.metric(
-        "Total recebido",
-        f"R$ {service_prices:,.2f}".replace(",", "x")
-        .replace(".", ",")
-        .replace("x", "."),
+    fig.update_layout(xaxis_title="PERÍODO", yaxis_title="LUCRO (R$)")
+    st.plotly_chart(fig)
+
+
+def display_technician_performance(df):
+    st.header("Desempenho dos técnicos")
+    fig = px.histogram(
+        df.groupby([pd.Grouper(key="DATA", freq="ME"), "TECNICO"])["VALOR DO TÉCNICO"]
+        .sum()
+        .reset_index(),
+        y="VALOR DO TÉCNICO",
+        x="DATA",
+        color="TECNICO",
+        barmode="group",
+        text_auto=True,
+        width=1100,
+        color_discrete_map={"TIAGO": "#CD6A13", "VALDERI": "#8C1C13"},
     )
-with col4:
-    st.metric(
-        "Lucro final",
-        f"R$ {liquid_profit:,.2f}".replace(",", "x")
-        .replace(".", ",")
-        .replace("x", "."),
+    fig.update_layout(xaxis_title="PERIODO", yaxis_title="VALOR RECEBIDO (R$)")
+    fig.update_traces(
+        textfont_size=14, textangle=0, textposition="outside", cliponaxis=False
     )
-with col5:
-    st.metric(
-        "Valor Recebido por Tiago",
-        f"R$ {profit_emploee['TIAGO']:,.2f}".replace(",", "x")
-        .replace(".", ",")
-        .replace("x", "."),
+    fig.update_yaxes(tickformat=",.2f")
+    st.plotly_chart(fig)
+
+
+def display_data_distribution(df):
+    st.header("Distribuição de dados")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Formas de pagamento")
+        df_filtered = df.dropna(subset=["F/PAGAMENTO"])
+        if not df_filtered.empty:
+            fig = px.pie(
+                df_filtered,
+                names="F/PAGAMENTO",
+                width=400,
+                color_discrete_sequence=["#10D2F9", "#152566", "#CD6A13", "#8C1C13"],
+                hole=0.4,
+            )
+            fig.update_traces(
+                textinfo="percent",
+                hoverinfo="percent",
+                text=df_filtered["F/PAGAMENTO"].unique(),
+            )
+            st.plotly_chart(fig)
+        else:
+            st.write("Nenhum dado disponível.")
+
+    with col2:
+        st.subheader("Status de serviço")
+        df_filtered = df.dropna(subset=["STATUS"])
+        if not df_filtered.empty:
+            fig = px.pie(
+                df_filtered,
+                names="STATUS",
+                width=400,
+                color_discrete_sequence=["#10D2F9", "#152566", "#CD6A13", "#8C1C13"],
+                hole=0.4,
+            )
+            fig.update_traces(
+                textinfo="percent",
+                hoverinfo="percent",
+                text=df_filtered["F/PAGAMENTO"].unique(),
+            )
+            st.plotly_chart(fig)
+        else:
+            st.write("Nenhum dado disponível.")
+
+
+def display_avarage_service_price(df):
+    st.header("Preço médio dos serviços")
+    avg_service_price = (
+        df.groupby("TECNICO")["VALOR TOTAL DO SERVIÇO"].mean().reset_index()
     )
-with col7:
-    if profit_emploee["VALDERI"]:
-        st.metric(
-            "Valor Recebido por Valderi",
-            f"R$ {profit_emploee['VALDERI']:,.2f}".replace(",", "x")
-            .replace(".", ",")
-            .replace("x", "."),
+
+    fig = px.bar(
+        avg_service_price,
+        x="VALOR TOTAL DO SERVIÇO",
+        y="TECNICO",
+        color="TECNICO",
+        color_discrete_map={"TIAGO": "#CD6A13", "VALDERI": "#8C1C13"},
+        text="VALOR TOTAL DO SERVIÇO",
+        labels={"VALOR TOTAL DO SERVIÇO": "Média Recebida (R$)", "TECNICO": "Técnico"},
+        orientation="h",
+        width=400,
+        height=380,
+    )
+
+    fig.update_traces(texttemplate="R$ %{text:.2f}", textposition="inside", width=0.4)
+
+    fig.update_layout(
+        showlegend=False,
+        xaxis=dict(title="Técnico"),
+        yaxis=dict(title="Média Recebida (R$)"),
+    )
+
+    st.plotly_chart(fig)
+
+
+def display_top_clients(df):
+    st.header("Top 10 clientes")
+
+    top_clients = df.groupby("CLIENTE").agg(
+        {"VALOR TOTAL DO SERVIÇO": "sum", "PRODUTO/SERVIÇO": "count"}
+    )
+
+    top_clients.columns = ["Valor Total Gasto", "Número de Serviços"]
+
+    top_clients = top_clients.sort_values("Valor Total Gasto", ascending=False).head(10)
+
+    top_clients["Valor Total Gasto"] = top_clients["Valor Total Gasto"].apply(
+        lambda x: f"R$ {x:,.2f}",
+    )
+
+    top_clients["Número de Serviços"] = top_clients["Número de Serviços"].astype(int)
+
+    st.table(top_clients)
+
+
+def main():
+    page_settings("Dashboard", "📊")
+    st.title("Dados financeiros da empresa")
+    st.markdown(
+        """
+        Os valores abaixo são baseados nos dados financeiros e operacionais fornecidos pela empresa.
+    """
+    )
+
+    df = load_data()
+
+    date_filter = DateFilter(df, "DATA")
+    df = date_filter.filter_by_date()
+
+    display_general_info(df)
+    st.markdown(
+        """
+        As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e lucro final.
+    """
+    )
+    display_profit_trend(df)
+    st.markdown(
+        """
+        O gráfico acima mostra a tendência do lucro ao longo do tempo.
+    """
+    )
+    display_technician_performance(df)
+    st.markdown(
+        """
+        O gráfico acima ilustra o desempenho financeiro dos técnicos ao longo do tempo.
+    """
+    )
+    display_data_distribution(df)
+    st.markdown(
+        """
+        Os gráficos acima mostram a distribuição de dados relacionados às formas de pagamento e status do serviço.
+    """
+    )
+    col1, col2 = st.columns(2)
+    with col1:
+        display_avarage_service_price(df)
+        st.markdown(
+            """
+            O gráfico acima representa a média de preço dos serviços realizados por cada técnico.
+        """
         )
-    else:
-        st.write("Nenhum dado disponível para o valor recebido por Valderi.")
-
-st.markdown(
-    """
-    Os valores acima representam informações gerais sobre os dados financeiros da empresa.
-    """
-)
-
-
-# TENDÊNCIA DO LUCRO AO LONGO DO TEMPO
-st.header("Tendência do lucro ao longo do tempo")
-fig = px.line(
-    df.set_index("DATA")["LUCRO FINAL"].groupby(pd.Grouper(freq="ME")).sum(),
-    markers=True,
-    width=1100,
-    color_discrete_map={"LUCRO FINAL": "#CD6A13"},
-)
-fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="LUCRO (R$)")
-st.plotly_chart(fig)
-
-st.markdown(
-    """
-    O gráfico acima representa a tendência do lucro final obtido pela empresa ao longo do tempo.
-    """
-)
-
-# DESEMPENHO FINANCEIRO POR TÉCNICO
-st.header("Desempenho financeiro por técnico")
-fig = px.histogram(
-    df.groupby([pd.Grouper(key="DATA", freq="ME"), "TECNICO"])["VALOR DO TÉCNICO"]
-    .sum()
-    .reset_index(),
-    y="VALOR DO TÉCNICO",
-    x="DATA",
-    color="TECNICO",
-    barmode="group",
-    text_auto=True,
-    width=1100,
-    color_discrete_map={"TIAGO": "#CD6A13", "VALDERI": "#8C1C13"},
-)
-fig.update_layout(xaxis_title="PERIODO DE TEMPO", yaxis_title="VALOR RECEBIDO (R$)")
-fig.update_traces(
-    textfont_size=14,
-    textangle=0,
-    textposition="outside",
-    cliponaxis=False,
-)
-fig.update_yaxes(tickformat=",.2f")
-st.plotly_chart(fig)
-
-st.markdown(
-    """
-    Os gráficos acima representam o lucro final obtido pela empresa e o desempenho financeiro dos técnicos Tiago e Valderi ao longo do tempo.
-    """
-)
-
-
-st.header("Distribuição de dados")
-col1, col2 = st.columns(2)
-# METODOS DE PAGAMENTO
-with col1:
-    st.subheader("Formas de pagamento")
-    df_filtered = df.dropna(subset=["F/PAGAMENTO"])
-    if not df_filtered.empty:
-        fig = px.pie(
-            df_filtered,
-            names="F/PAGAMENTO",
-            width=400,
-            color_discrete_sequence=["#10D2F9", "#152566", "#CD6A13", "#8C1C13"],
-            hole=0.4,
+    with col2:
+        display_top_clients(df)
+        st.markdown(
+            """
+            A tabela acima mostra os 10 principais clientes com base no valor total gasto.
+        """
         )
-        fig.update_traces(
-            textinfo="percent",
-            hoverinfo="percent",
-            text=df_filtered["F/PAGAMENTO"].unique(),
-        )
-        st.plotly_chart(fig)
-    else:
-        st.write("Nenhum dado disponível para a distribuição das formas de pagamento.")
 
-with col2:
-    # STATUS DOS PEDIDOS
-    st.subheader("Status de serviço")
-    df_filtered = df.dropna(subset=["STATUS"])
-    if not df_filtered.empty:
-        fig = px.pie(
-            df_filtered,
-            names="STATUS",
-            width=400,
-            color_discrete_sequence=["#10D2F9", "#152566", "#CD6A13", "#8C1C13"],
-            hole=0.4,
-        )
-        fig.update_traces(
-            textinfo="percent",
-            hoverinfo="percent",
-            text=df_filtered["F/PAGAMENTO"].unique(),
-        )
-        st.plotly_chart(fig)
-    else:
-        st.write("Nenhum dado disponível para a distribuição dos status de serviço.")
 
-st.markdown(
-    """
-    Dados em estado como N/A ou null não foram levados em consideração para os gráficos de distribuição de dados.
-    """
-)
+if __name__ == "__main__":
+    main()

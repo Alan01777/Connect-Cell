@@ -206,7 +206,7 @@ def main():
     display_data_distribution(df)
     st.markdown(
         """
-        Os gráficos acima mostram a distribuição de dados relacionados às formas de pagamento e status do serviço.
+        Os gráficos acima mostram a distribuição de dados relacionados às formas de pagamento e status do serviço. Dados ausentes foram ignorados.
     """
     )
     col1, col2 = st.columns(2)

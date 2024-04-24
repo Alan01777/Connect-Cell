@@ -53,4 +53,11 @@ for col in monetary_columns:
 df["DATA"] = df["DATA"].dt.strftime("%d/%m/%Y")
 
 # Display the DataFrame
-st.data_editor(df)
+st.data_editor(df, )
+
+st.markdown("## Exportar dados")
+# export to excel
+if st.button("Exportar dados"):
+    st.write("Exportando dados...")
+    df.to_excel("servicos_exportados.xlsx", index=False)
+    st.write("Dados exportados com sucesso!")

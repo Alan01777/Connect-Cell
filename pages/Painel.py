@@ -3,10 +3,9 @@ import pandas as pd
 import plotly.express as px
 
 from utils import DataLoader
-from settings import page_settings
 from utils import DateFilter
 from utils import Formatting
-
+from settings import page_settings
 
 def load_data():
     return DataLoader().load_data()

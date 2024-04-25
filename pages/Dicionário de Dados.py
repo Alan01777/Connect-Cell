@@ -1,7 +1,7 @@
 import streamlit as st
 from settings import page_settings
 
-page_settings("Dashboard", "📊")
+page_settings("Dicionário de Dados", "📊")
 
 
 st.title("Dicionário de Dados")

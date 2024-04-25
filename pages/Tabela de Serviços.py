@@ -5,7 +5,6 @@ from utils import Formatting
 
 page_settings("Tabela de Serviços", "📊")
 
-
 def load_data():
     return DataLoader().load_data()
 

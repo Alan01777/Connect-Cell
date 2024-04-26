@@ -1,3 +1,4 @@
 .venv
 **/__pycache__
 .streamlit/secrets.toml
+connect-cell-938be2e78bb3.json

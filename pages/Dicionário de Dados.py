@@ -64,7 +64,7 @@ data_dictionary = {
         "example": "30",
         "details": "Esta coluna indica o percentual de comissão que o técnico recebe sobre o lucro do serviço."
     },
-    "LUCRO": {
+    "LUCRO BRUTO": {
         "type": "float",
         "description": "Lucro obtido com o serviço",
         "format": "R$0,00",
@@ -78,7 +78,7 @@ data_dictionary = {
         "example": "150",
         "details": "Esta coluna indica o valor que o técnico recebe pelo serviço, calculado como 'Percentual do Técnico * Lucro'."
     },
-    "LUCRO FINAL": {
+    "LUCRO LIQUIDO": {
         "type": "float",
         "description": "Lucro final obtido",
         "format": "R$0,00",

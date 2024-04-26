@@ -17,20 +17,20 @@ def display_general_info(df):
     col5, col6, col7 = st.columns(3)
 
     total_requests = len(df.index)
-    total_spent = Formatting.format_monetary(df["(R$)PEÇA"].sum())
-    service_prices = Formatting.format_monetary(df["VALOR TOTAL DO SERVIÇO"].sum())
+    part_cost = df["(R$)PEÇA"].sum()
+    service_prices = df["VALOR TOTAL DO SERVIÇO"].sum()
 
     profit_employee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
-    liquid_profit = Formatting.format_monetary(df["LUCRO FINAL"].sum())
+    liquid_profit = df["LUCRO LIQUIDO"].sum()
 
     with col1:
         st.metric("Total de serviços", total_requests)
     with col2:
-        st.metric("Total gasto com peças", total_spent)
+        st.metric("Total gasto com peças", Formatting.format_monetary(part_cost))
     with col3:
-        st.metric("Total recebido", service_prices)
+        st.metric("Total recebido", Formatting.format_monetary(service_prices))
     with col4:
-        st.metric("Lucro final", liquid_profit)
+        st.metric("Lucro líquido", Formatting.format_monetary(liquid_profit))
     with col5:
         st.metric(
             "Valor Recebido por Tiago",
@@ -49,12 +49,12 @@ def display_general_info(df):
 def display_profit_trend(df):
     st.header("Tendência do lucro")
     fig = px.line(
-        df.set_index("DATA")["LUCRO FINAL"].groupby(pd.Grouper(freq="ME")).sum(),
+        df.set_index("DATA")["LUCRO LIQUIDO"].groupby(pd.Grouper(freq="ME")).sum(),
         markers=True,
         width=1100,
-        color_discrete_map={"LUCRO FINAL": "#CD6A13"},
+        color_discrete_map={"LUCRO LIQUIDO": "#CD6A13"},
     )
-    fig.update_layout(xaxis_title="PERÍODO", yaxis_title="LUCRO (R$)")
+    fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="LUCRO LÍQUIDO (R$)")
     st.plotly_chart(fig)
 
 
@@ -192,7 +192,7 @@ def main():
     display_general_info(df)
     st.markdown(
         """
-        As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e lucro final.
+        As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e LUCRO LIQUIDO.
     """
     )
     display_profit_trend(df)

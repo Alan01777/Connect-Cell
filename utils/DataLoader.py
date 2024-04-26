@@ -8,9 +8,9 @@ class DataLoader:
             "CONTATO": str,
             "(R$)PEÇA": float,
             "VALOR TOTAL DO SERVIÇO": float,
-            "LUCRO": float,
+            "LUCRO BRUTO": float,
             "VALOR DO TÉCNICO": float,
-            "LUCRO FINAL": float,
+            "LUCRO LIQUIDO": float,
         }
 
     st.cache_data

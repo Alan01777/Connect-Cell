@@ -30,12 +30,12 @@ def display_dataframe(df):
     df["DATA"] = df["DATA"].dt.strftime("%d/%m/%Y")
     monetary_columns = [
         "(R$)PEÇA",
-        "LUCRO",
+        "LUCRO BRUTO",
         "VALOR TOTAL DO SERVIÇO",
-        "LUCRO FINAL",
+        "LUCRO LIQUIDO",
         "VALOR DO TÉCNICO",
     ]
-    
+    df["% DO TÉCNICO"] = (df["% DO TÉCNICO"] * 100).map("{:.0f}%".format)
     for column in monetary_columns:
         df[column] = df[column].map("R$ {:.2f}".format)
     return df
@@ -60,7 +60,7 @@ def apply_filters(df, search_term, selected_status, selected_technician):
 def main():
     data = load_data()
     data = display_dataframe(data)
-    data
+    st.dataframe(data)
 
 
 if __name__ == "__main__":

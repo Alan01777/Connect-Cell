@@ -52,7 +52,7 @@ def display_general_info(df):
 def display_profit_trend(df):
     st.header("Tendência do lucro")
     fig = px.line(
-        df.set_index("DATA")["LUCRO LIQUIDO"].groupby(pd.Grouper(freq="ME")).sum(),
+        df.set_index("DATA")["LUCRO LIQUIDO"].groupby(pd.Grouper(freq="M")).sum(),
         markers=True,
         width=1100,
         color_discrete_map={"LUCRO LIQUIDO": "#CD6A13"},
@@ -64,7 +64,7 @@ def display_profit_trend(df):
 def display_technician_performance(df):
     st.header("Desempenho dos técnicos")
     fig = px.histogram(
-        df.groupby([pd.Grouper(key="DATA", freq="ME"), "TECNICO"])["VALOR DO TÉCNICO"]
+        df.groupby([pd.Grouper(key="DATA", freq="M"), "TECNICO"])["VALOR DO TÉCNICO"]
         .sum()
         .reset_index(),
         y="VALOR DO TÉCNICO",

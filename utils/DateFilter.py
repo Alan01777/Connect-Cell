@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd 
 from dateutil.relativedelta import relativedelta
 
 class DateFilter:
@@ -7,6 +8,9 @@ class DateFilter:
         self.date_column = date_column
 
     def filter_by_date(self):
+        #convert DATA column to date
+        self.df[self.date_column] = pd.to_datetime(self.df[self.date_column], format="%m/%d/%Y")
+        
         col1, col2 = st.columns(2)
         with col1:
             start_date = st.date_input(

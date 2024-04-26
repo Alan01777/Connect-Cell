@@ -7,6 +7,7 @@ from utils import DateFilter
 from utils import Formatting
 from settings import page_settings
 
+
 def load_data():
     return DataLoader().load_data()
 
@@ -14,29 +15,31 @@ def load_data():
 def display_general_info(df):
     st.header("Informações Gerais")
     col1, col2, col3, col4 = st.columns(4)
-    col5, col6, col7 = st.columns(3)
-
-    total_requests = len(df.index)
-    part_cost = df["(R$)PEÇA"].sum()
-    service_prices = df["VALOR TOTAL DO SERVIÇO"].sum()
+    col5, col6 = st.columns([3.1, 1])
 
     profit_employee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
-    liquid_profit = df["LUCRO LIQUIDO"].sum()
 
     with col1:
-        st.metric("Total de serviços", total_requests)
+        st.metric("Total de serviços", len(df.index))
     with col2:
-        st.metric("Total gasto com peças", Formatting.format_monetary(part_cost))
+        st.metric(
+            "Total gasto com peças", Formatting.format_monetary(df["(R$)PEÇA"].sum())
+        )
     with col3:
-        st.metric("Total recebido", Formatting.format_monetary(service_prices))
+        st.metric(
+            "Total recebido",
+            Formatting.format_monetary(df["VALOR TOTAL DO SERVIÇO"].sum()),
+        )
     with col4:
-        st.metric("Lucro líquido", Formatting.format_monetary(liquid_profit))
+        st.metric(
+            "Lucro líquido", Formatting.format_monetary(df["LUCRO LIQUIDO"].sum())
+        )
     with col5:
         st.metric(
             "Valor Recebido por Tiago",
             Formatting.format_monetary(profit_employee["TIAGO"]),
         )
-    with col7:
+    with col6:
         if "VALDERI" in profit_employee.index:
             st.metric(
                 "Valor Recebido por Valderi",

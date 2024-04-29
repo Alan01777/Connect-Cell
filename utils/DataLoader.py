@@ -1,13 +1,18 @@
 import streamlit as st
-import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 
 class DataLoader:
     def __init__(self):
-        self.conn = st.connection("gsheets", type=GSheetsConnection)
+        self.conn = None
+
+    def load_data(self):
+        # Disconnect from Google Sheets
+        self.conn = None
+        self.df = None
+
+        # Reestablish the connection with Google Sheets
+        self.conn = GSheetsConnection("gsheets", type=GSheetsConnection)
         self.df = self.conn.read()
-        
-        
-    @st.cache_data
-    def load_data(_self):
-        return _self.df
+
+        return self.df
+

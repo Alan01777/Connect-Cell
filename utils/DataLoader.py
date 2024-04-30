@@ -8,6 +8,8 @@ class DataLoader:
 
     def load_data(self):
         st.cache_data.clear()
-        self.df = self.conn.read()
-
-        return self.df
+        try:
+            self.df = self.conn.read()
+            return self.df
+        except Exception as e:
+            return st.error(f"Erro ao carregar os dados: {e}")

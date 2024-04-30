@@ -1,10 +1,10 @@
 import streamlit as st
-from utils import DataLoader, DateFilter
+from utils import DataLoader, DateFilter, DataInserter
 from settings import page_settings
 
 
-
 page_settings("Tabela de Serviços", "📊")
+
 
 @st.cache_data
 def load_data():
@@ -39,8 +39,8 @@ def display_dataframe(df):
         "VALOR DO TÉCNICO",
     ]
     df["% DO TÉCNICO"] = (df["% DO TÉCNICO"] * 100).map("{:.0f}%".format)
-    for column in monetary_columns:
-        df[column] = df[column].map("R$ {:.2f}".format)
+    # for column in monetary_columns:
+    #     df[column] = df[column].map("R$ {:.2f}".format)
     return df
 
 
@@ -63,8 +63,13 @@ def apply_filters(df, search_term, selected_status, selected_technician):
 def main():
     data = load_data()
     data = display_dataframe(data)
-    
-    st.dataframe(data)
+    new_data = st.data_editor(data, num_rows="dynamic")
+
+    if st.button("Atualizar"):
+        if not new_data.equals(data):
+            st.success("Data has been updated!")
+            DataInserter().update_data(new_data)
+
 
 if __name__ == "__main__":
     main()

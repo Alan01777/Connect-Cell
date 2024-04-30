@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 from utils import DataLoader, DataInserter
 
+
 def main():
 
     st.title("Registro de Serviços")
@@ -61,6 +62,8 @@ def main():
     if st.button("Inserir"):
         try:    
             DataInserter().insert_data(pd.DataFrame.from_dict(data))
+            with st.expander("Dados inseridos:", expanded=True):
+                st.dataframe(pd.DataFrame.from_dict(data))
             #show the inserted data as a popup
             st.success("Dados inseridos com sucesso!")
         except Exception as e:

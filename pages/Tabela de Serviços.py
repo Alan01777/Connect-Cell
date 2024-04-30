@@ -1,7 +1,7 @@
 import streamlit as st
 from utils import DataLoader, DateFilter
 from settings import page_settings
-#import pyautogui
+
 
 
 page_settings("Tabela de Serviços", "📊")
@@ -61,7 +61,6 @@ def apply_filters(df, search_term, selected_status, selected_technician):
 
 
 def main():
-    st.cache_data.clear()
     data = load_data()
     data = display_dataframe(data)
     

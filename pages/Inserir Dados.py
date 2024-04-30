@@ -2,7 +2,6 @@ from asyncio import sleep
 import streamlit as st
 import pandas as pd
 from utils import DataLoader, DataInserter
-import pyautogui
 
 def main():
 

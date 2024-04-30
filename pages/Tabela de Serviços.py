@@ -1,7 +1,7 @@
 import streamlit as st
 from utils import DataLoader, DateFilter
 from settings import page_settings
-#import pyautogui
+
 
 
 page_settings("Tabela de Serviços", "📊")

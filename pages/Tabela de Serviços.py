@@ -39,8 +39,6 @@ def display_dataframe(df):
         "VALOR DO TÉCNICO",
     ]
     df["% DO TÉCNICO"] = (df["% DO TÉCNICO"] * 100).map("{:.0f}%".format)
-    # for column in monetary_columns:
-    #     df[column] = df[column].map("R$ {:.2f}".format)
     return df
 
 

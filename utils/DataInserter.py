@@ -18,3 +18,7 @@ class DataInserter:
 
         # Write the updated DataFrame back to the Google Sheets document
         self.conn.update(data=st.session_state.df)
+        
+    def update_data(self, data: pd.DataFrame):
+        # Write the updated DataFrame back to the Google Sheets document
+        self.conn.update(data=data)

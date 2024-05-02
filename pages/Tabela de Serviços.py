@@ -2,7 +2,6 @@ import streamlit as st
 from utils import DataLoader, DateFilter, DataInserter
 from settings import page_settings
 
-
 page_settings("Tabela de Serviços", "📊")
 
 

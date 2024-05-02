@@ -20,5 +20,12 @@ class DataInserter:
         self.conn.update(data=st.session_state.df)
         
     def update_data(self, data: pd.DataFrame):
-        # Write the updated DataFrame back to the Google Sheets document
-        self.conn.update(data=data)
+         if 'df' not in st.session_state:
+            # If not, read the existing data from the Google Sheets document
+            st.session_state.df = self.conn.read()
+
+        # Append the new row to the current data
+            st.session_state.df = st.session_state.df.append(data, ignore_index=True)
+
+            # Write the updated DataFrame back to the Google Sheets document
+            self.conn.update(data=st.session_state.df)

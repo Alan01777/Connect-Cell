@@ -17,6 +17,7 @@ def display_general_info(df):
     col1, col2, col3, col4 = st.columns(4)
     col5, col6 = st.columns([3.1, 1])
 
+    
     profit_employee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
 
     with col1:

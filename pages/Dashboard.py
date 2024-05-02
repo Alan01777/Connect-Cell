@@ -7,6 +7,7 @@ from utils import DateFilter
 from utils import Formatting
 from settings import page_settings
 
+
 def load_data():
     return DataLoader().load_data()
 
@@ -14,29 +15,31 @@ def load_data():
 def display_general_info(df):
     st.header("Informações Gerais")
     col1, col2, col3, col4 = st.columns(4)
-    col5, col6, col7 = st.columns(3)
-
-    total_requests = len(df.index)
-    total_spent = Formatting.format_monetary(df["(R$)PEÇA"].sum())
-    service_prices = Formatting.format_monetary(df["VALOR TOTAL DO SERVIÇO"].sum())
+    col5, col6 = st.columns([3.1, 1])
 
     profit_employee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
-    liquid_profit = Formatting.format_monetary(df["LUCRO FINAL"].sum())
 
     with col1:
-        st.metric("Total de serviços", total_requests)
+        st.metric("Total de serviços", len(df.index))
     with col2:
-        st.metric("Total gasto com peças", total_spent)
+        st.metric(
+            "Total gasto com peças", Formatting.format_monetary(df["(R$)PEÇA"].sum())
+        )
     with col3:
-        st.metric("Total recebido", service_prices)
+        st.metric(
+            "Total recebido",
+            Formatting.format_monetary(df["VALOR TOTAL DO SERVIÇO"].sum()),
+        )
     with col4:
-        st.metric("Lucro final", liquid_profit)
+        st.metric(
+            "Lucro líquido", Formatting.format_monetary(df["LUCRO LIQUIDO"].sum())
+        )
     with col5:
         st.metric(
             "Valor Recebido por Tiago",
             Formatting.format_monetary(profit_employee["TIAGO"]),
         )
-    with col7:
+    with col6:
         if "VALDERI" in profit_employee.index:
             st.metric(
                 "Valor Recebido por Valderi",
@@ -49,19 +52,19 @@ def display_general_info(df):
 def display_profit_trend(df):
     st.header("Tendência do lucro")
     fig = px.line(
-        df.set_index("DATA")["LUCRO FINAL"].groupby(pd.Grouper(freq="ME")).sum(),
+        df.set_index("DATA")["LUCRO LIQUIDO"].groupby(pd.Grouper(freq="M")).sum(),
         markers=True,
         width=1100,
-        color_discrete_map={"LUCRO FINAL": "#CD6A13"},
+        color_discrete_map={"LUCRO LIQUIDO": "#CD6A13"},
     )
-    fig.update_layout(xaxis_title="PERÍODO", yaxis_title="LUCRO (R$)")
+    fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="LUCRO LÍQUIDO (R$)")
     st.plotly_chart(fig)
 
 
 def display_technician_performance(df):
     st.header("Desempenho dos técnicos")
     fig = px.histogram(
-        df.groupby([pd.Grouper(key="DATA", freq="ME"), "TECNICO"])["VALOR DO TÉCNICO"]
+        df.groupby([pd.Grouper(key="DATA", freq="M"), "TECNICO"])["VALOR DO TÉCNICO"]
         .sum()
         .reset_index(),
         y="VALOR DO TÉCNICO",
@@ -192,7 +195,7 @@ def main():
     display_general_info(df)
     st.markdown(
         """
-        As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e lucro final.
+        As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e LUCRO LIQUIDO.
     """
     )
     display_profit_trend(df)

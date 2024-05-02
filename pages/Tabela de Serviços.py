@@ -1,9 +1,11 @@
 import streamlit as st
-from utils import DataLoader, DateFilter
+from utils import DataLoader, DateFilter, DataInserter
 from settings import page_settings
 
 page_settings("Tabela de Serviços", "📊")
 
+
+@st.cache_data
 def load_data():
     return DataLoader().load_data()
 
@@ -30,14 +32,12 @@ def display_dataframe(df):
     df["DATA"] = df["DATA"].dt.strftime("%d/%m/%Y")
     monetary_columns = [
         "(R$)PEÇA",
-        "LUCRO",
+        "LUCRO BRUTO",
         "VALOR TOTAL DO SERVIÇO",
-        "LUCRO FINAL",
+        "LUCRO LIQUIDO",
         "VALOR DO TÉCNICO",
     ]
-    
-    for column in monetary_columns:
-        df[column] = df[column].map("R$ {:.2f}".format)
+    df["% DO TÉCNICO"] = (df["% DO TÉCNICO"] * 100).map("{:.0f}%".format)
     return df
 
 
@@ -47,7 +47,6 @@ def apply_filters(df, search_term, selected_status, selected_technician):
             df["CLIENTE"].str.contains(search_term, case=False)
             | df["TECNICO"].str.contains(search_term, case=False)
         ]
-
 
     if selected_status != "All":
         df = df[df["STATUS"] == selected_status]
@@ -61,7 +60,12 @@ def apply_filters(df, search_term, selected_status, selected_technician):
 def main():
     data = load_data()
     data = display_dataframe(data)
-    data
+    new_data = st.data_editor(data, num_rows="dynamic")
+
+    if st.button("Atualizar"):
+        if not new_data.equals(data):
+            st.success("Data has been updated!")
+            DataInserter().update_data(new_data)
 
 
 if __name__ == "__main__":

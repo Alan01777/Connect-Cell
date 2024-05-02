@@ -1,18 +1,15 @@
 import streamlit as st
-import pandas as pd
+from streamlit_gsheets import GSheetsConnection
+
 
 class DataLoader:
     def __init__(self):
-        self.url = st.secrets["Database_url"]["url"]
-        self.types = {
-            "CONTATO": str,
-            "(R$)PEÇA": float,
-            "VALOR TOTAL DO SERVIÇO": float,
-            "LUCRO": float,
-            "VALOR DO TÉCNICO": float,
-            "LUCRO FINAL": float,
-        }
+        self.conn = GSheetsConnection("gsheets", type=GSheetsConnection)
 
-    st.cache_data
     def load_data(self):
-        return pd.read_excel(self.url, dtype=self.types)
+        st.cache_data.clear()
+        try:
+            self.df = self.conn.read()
+            return self.df
+        except Exception as e:
+            return st.error(f"Erro ao carregar os dados: {e}")

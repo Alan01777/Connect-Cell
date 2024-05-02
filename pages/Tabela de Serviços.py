@@ -61,7 +61,7 @@ def apply_filters(df, search_term, selected_status, selected_technician):
 def main():
     data = load_data()
     data = display_dataframe(data)
-    new_data = st.data_editor(data, num_rows="dynamic")
+    new_data = st.data_editor(data, num_rows="static")
 
     if st.button("Atualizar"):
         if not new_data.equals(data):

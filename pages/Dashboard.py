@@ -17,7 +17,6 @@ def display_general_info(df):
     col1, col2, col3, col4 = st.columns(4)
     col5, col6 = st.columns([3.1, 1])
 
-    
     profit_employee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
 
     with col1:
@@ -52,35 +51,82 @@ def display_general_info(df):
 
 def display_profit_trend(df):
     st.header("Tendência do lucro")
+
+    # Rename columns
+    df = df.rename(
+        columns={
+            "(R$)PEÇA": "Despesas",
+            "VALOR TOTAL DO SERVIÇO": "Faturamento",
+            "LUCRO LIQUIDO": "Lucro",
+        }
+    )
+
+    # Melt the DataFrame to have a format suitable for px.line
+    df_melt = df.melt(
+        id_vars=["DATA"],
+        value_vars=["Despesas", "Faturamento", "Lucro"],
+        var_name="Tipo",
+        value_name="Valor",
+    )
+
+    # Group by month and sum
+    df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
+    df_melt.set_index("DATA", inplace=True)
+    df_melt = df_melt.groupby([pd.Grouper(freq="M"), "Tipo"]).sum().reset_index()
+
+    # Create figure
     fig = px.line(
-        df.set_index("DATA")["LUCRO LIQUIDO"].groupby(pd.Grouper(freq="M")).sum(),
+        df_melt,
+        x="DATA",
+        y="Valor",
+        color="Tipo",
         markers=True,
         width=1100,
-        color_discrete_map={"LUCRO LIQUIDO": "#CD6A13"},
+        color_discrete_map={
+            "Despesas": "#8C1C13",
+            "Faturamento": "#CD6A13",
+            "Lucro": "#00CD6A ",
+        },
     )
-    fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="LUCRO LÍQUIDO (R$)")
+    fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
     st.plotly_chart(fig)
 
 
 def display_technician_performance(df):
     st.header("Desempenho dos técnicos")
-    fig = px.histogram(
-        df.groupby([pd.Grouper(key="DATA", freq="M"), "TECNICO"])["VALOR DO TÉCNICO"]
-        .sum()
-        .reset_index(),
-        y="VALOR DO TÉCNICO",
+    # Display a line chart with the performance of each technician
+    df_melt = df.melt(id_vars=["DATA", "TECNICO"], value_vars=["VALOR DO TÉCNICO"])
+    df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
+    df_melt.set_index("DATA", inplace=True)
+    df_melt = df_melt.groupby([pd.Grouper(freq="M"), "TECNICO"]).sum().reset_index()
+
+    # Reindex to include all combinations of dates and technicians
+    df_melt.set_index(["DATA", "TECNICO"], inplace=True)
+    df_melt = df_melt.reindex(
+        pd.MultiIndex.from_product(
+            [
+                pd.date_range(
+                    start=df_melt.index.get_level_values("DATA").min(),
+                    end=df_melt.index.get_level_values("DATA").max(),
+                    freq="M",
+                ),
+                df_melt.index.get_level_values("TECNICO").unique(),
+            ],
+            names=["DATA", "TECNICO"],
+        ),
+        fill_value=0,
+    ).reset_index()
+
+    fig = px.line(
+        df_melt,
         x="DATA",
+        y="value",
         color="TECNICO",
-        barmode="group",
-        text_auto=True,
+        markers=True,
         width=1100,
         color_discrete_map={"TIAGO": "#CD6A13", "VALDERI": "#8C1C13"},
     )
-    fig.update_layout(xaxis_title="PERIODO", yaxis_title="VALOR RECEBIDO (R$)")
-    fig.update_traces(
-        textfont_size=14, textangle=0, textposition="outside", cliponaxis=False
-    )
-    fig.update_yaxes(tickformat=",.2f")
+    fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
     st.plotly_chart(fig)
 
 
@@ -92,18 +138,15 @@ def display_data_distribution(df):
         st.subheader("Formas de pagamento")
         df_filtered = df.dropna(subset=["F/PAGAMENTO"])
         if not df_filtered.empty:
-            fig = px.pie(
+            fig = px.histogram(
                 df_filtered,
-                names="F/PAGAMENTO",
+                x="F/PAGAMENTO",
+                histnorm='percent',
                 width=400,
-                color_discrete_sequence=["#10D2F9", "#152566", "#CD6A13", "#8C1C13"],
-                hole=0.4,
+                nbins=len(df_filtered["F/PAGAMENTO"].unique()),
+                color_discrete_sequence=["#CD6A13"],
             )
-            fig.update_traces(
-                textinfo="percent",
-                hoverinfo="percent",
-                text=df_filtered["F/PAGAMENTO"].unique(),
-            )
+            fig.update_layout(xaxis_title="Formas de pagamento", yaxis_title="Porcentagem (%)")
             st.plotly_chart(fig)
         else:
             st.write("Nenhum dado disponível.")
@@ -112,18 +155,15 @@ def display_data_distribution(df):
         st.subheader("Status de serviço")
         df_filtered = df.dropna(subset=["STATUS"])
         if not df_filtered.empty:
-            fig = px.pie(
+            fig = px.histogram(
                 df_filtered,
-                names="STATUS",
+                x="STATUS",
                 width=400,
-                color_discrete_sequence=["#10D2F9", "#152566", "#CD6A13", "#8C1C13"],
-                hole=0.4,
+                histnorm='percent',
+                nbins=len(df_filtered["STATUS"].unique()),
+                color_discrete_sequence=["#8C1C13"],
             )
-            fig.update_traces(
-                textinfo="percent",
-                hoverinfo="percent",
-                text=df_filtered["F/PAGAMENTO"].unique(),
-            )
+            fig.update_layout(xaxis_title="Status de serviço", yaxis_title="Porcentagem (%)")
             st.plotly_chart(fig)
         else:
             st.write("Nenhum dado disponível.")
@@ -202,7 +242,7 @@ def main():
     display_profit_trend(df)
     st.markdown(
         """
-        O gráfico acima mostra a tendência do lucro ao longo do tempo.
+        O gráfico acima mostra a tendência do faturamento, das despesas e do lucro ao longo do tempo.
     """
     )
     display_technician_performance(df)

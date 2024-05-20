@@ -1,78 +1,93 @@
 import streamlit as st
 import pandas as pd
-from utils import DataLoader, DateFilter, DataInserter
-from settings import page_settings
+from utils import DataLoader, DataInserter
 
-page_settings("Tabela de Serviços", "📊")
-
-
-@st.cache_data
-def load_data():
-    return DataLoader().load_data()
-
-
-def display_dataframe(df):
-    st.title("Tabela de Serviços")
-    col1, col2 = st.columns(2)
-
-    date_filter = DateFilter(df, "DATA")
-
-    df = date_filter.filter_by_date()
-    colI, colII = st.columns(2)
-    with colI:
-        search_term = st.text_input("Buscar por termo")
-    with colII:
-        st.selectbox("Filtrar por categoria", ["TODOS"] + list(df["CATEGORIA"].unique()))
-    with col1:
-        selected_status = st.selectbox(
-            "Filtrar por status", ["TODOS"] + list(df["STATUS"].unique())
-        )
-    with col2:
-        selected_technician = st.selectbox(
-            "Filtrar por técnico", ["TODOS"] + list(df["TECNICO"].unique())
-        )
-
-    df = apply_filters(df, search_term, selected_status, selected_technician)
-    df["DATA"] = df["DATA"].dt.strftime("%d/%m/%Y")
-    monetary_columns = [
-        "(R$)PEÇA",
-        "LUCRO BRUTO",
-        "VALOR TOTAL DO SERVIÇO",
-        "LUCRO LIQUIDO",
-        "VALOR DO TÉCNICO",
-    ]
-    df["% DO TÉCNICO"] = (df["% DO TÉCNICO"] * 100).map("{:.0f}%".format)
-    return df
-
-
-def apply_filters(df, search_term, selected_status, selected_technician):
-    if search_term:
-        df = df[
-            df["CLIENTE"].str.contains(search_term, case=False)
-            | df["TECNICO"].str.contains(search_term, case=False)
-            | df["CATEGORIA"].str.contains(search_term, case=False)
-            | df["PRODUTO/SERVIÇO"].str.contains(search_term, case=False)
-            | df["CONTATO"].str.contains(search_term, case=False)
-        ]
-
-    if selected_status != "TODOS":
-        df = df[df["STATUS"] == selected_status]
-
-    if selected_technician != "TODOS":
-        df = df[df["TECNICO"] == selected_technician]
-
-    return df
-
+class ServiceRegistry:
+    def __init__(self):
+        self.data = {}
+    
+    def input_client_info(self):
+        st.header("Detalhes do Serviço")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            self.data["CLIENTE"] = st.text_input("Cliente")
+        with col2:
+            self.data["CONTATO"] = st.text_input("Contato")
+        with col3:
+            date = st.date_input("Data")
+            self.data["DATA"] = date.strftime("%d/%m/%Y")
+    
+    def input_service_details(self):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            self.data["CATEGORIA"] = st.selectbox(
+                "Categoria",
+                [
+                    "REPAROS HARDWARE",
+                    "REPAROS SOFTWARE",
+                    "VENDAS DISPOSITIVOS",
+                    "VENDAS HARDWARE",
+                    "VENDAS ACESSÓRIOS",
+                    "OUTROS",
+                ]
+            )
+        with col2:
+            status_options = [
+                "EM ANDAMENTO",
+                "ENTREGUE",
+                "DEVOLUÇÃO",
+                "FINALIZADO",
+                "ORÇAMENTO",
+            ]
+            self.data["STATUS"] = st.selectbox("Status", status_options)
+        with col3:
+            self.data["TECNICO"] = st.selectbox("Técnico", ["TIAGO", "VALDERI"])
+        self.data["PRODUTO/SERVIÇO"] = st.text_area("Descrição do Produto/Serviço")
+    
+    def input_financial_details(self):
+        st.header("Detalhes Financeiros")
+        col1, col2 = st.columns(2)
+        with col1:
+            self.data["(R$)PEÇA"] = st.number_input("Total gasto com peças")
+            self.data["VALOR TOTAL DO SERVIÇO"] = st.number_input("Valor do Serviço")
+        with col2:
+            self.data["% DO TÉCNICO"] = st.selectbox("% do técnico", [30, 50, 80, 100]) / 100
+            self.data["F/PAGAMENTO"] = st.selectbox(
+                "Método de pagamento",
+                ["Dinheiro", "Cartão de crédito", "Cartão de débito", "Pix"]
+            )
+        
+        self.calculate_profits()
+    
+    def calculate_profits(self):
+        part_value = self.data["(R$)PEÇA"]
+        service_value = self.data["VALOR TOTAL DO SERVIÇO"]
+        technician_percentage = self.data["% DO TÉCNICO"]
+        
+        self.data["LUCRO BRUTO"] = service_value - part_value
+        self.data["VALOR DO TÉCNICO"] = technician_percentage * self.data["LUCRO BRUTO"]
+        self.data["LUCRO LIQUIDO"] = self.data["LUCRO BRUTO"] - self.data["VALOR DO TÉCNICO"]
+    
+    def insert_data(self):
+        if st.button("Inserir"):
+            try:
+                DataInserter().insert_data(pd.DataFrame([self.data]))
+                with st.expander("Dados inseridos:", expanded=True):
+                    st.dataframe(pd.DataFrame([self.data]))
+                st.success("Dados inseridos com sucesso!")
+            except Exception as e:
+                st.error(f"Erro ao inserir dados: {e}")
+    
+    def display_page(self):
+        self.input_client_info()
+        self.input_service_details()
+        self.input_financial_details()
+        self.insert_data()
 
 def main():
-    data = load_data()
-    data = display_dataframe(data)
-    st.dataframe(data)
-    # data_dict = new_data.to_dict(orient="records")
-    
-    # if st.button("Salvar"):
-    #     DataInserter().update_data(pd.DataFrame.from_dict(data_dict))
-    #     st.success("Dados salvos com sucesso!")
-        
+    st.title("Registro de Serviços (Não Funcional!)")
+    service_registry = ServiceRegistry()
+    service_registry.display_page()
+
 if __name__ == "__main__":
     main()

@@ -18,8 +18,6 @@ class Dashboard:
     def display_general_info(self):
         df = self.df
         st.header("Informações Gerais")
-        col1, col2, col3, col4 = st.columns(4)
-        col5, col6, col7 = st.columns([1, 2, 1])
 
         profit_employee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
         category = {
@@ -31,35 +29,41 @@ class Dashboard:
             "OUTROS": df[df["CATEGORIA"] == "OUTROS"],
         }
 
-        with col1:
-            st.metric("Total de serviços", len(df.index))
-        with col2:
-            st.metric("Despesas", Formatting.format_monetary(df["(R$)PEÇA"].sum()))
-        with col3:
-            st.metric(
-                "Faturamento",
-                Formatting.format_monetary(df["VALOR TOTAL DO SERVIÇO"].sum()),
+        with st.expander("Detalhes financeiros"):
+            col1, col2, col3, col4 = st.columns(4)
+            col5, col6, col7 = st.columns([1, 2, 1])
+            with col1:
+                st.metric("Total de serviços", len(df.index))
+            with col2:
+                st.metric("Despesas", Formatting.format_monetary(df["(R$)PEÇA"].sum()))
+            with col3:
+                st.metric(
+                    "Faturamento",
+                    Formatting.format_monetary(df["VALOR TOTAL DO SERVIÇO"].sum()),
+                )
+            with col4:
+                st.metric(
+                    "Lucro", Formatting.format_monetary(df["LUCRO LIQUIDO"].sum())
+                )
+            with col5:
+                st.metric(
+                    "Valor Recebido por Tiago",
+                    Formatting.format_monetary(profit_employee.get("TIAGO", 0)),
+                )
+            with col6:
+                st.write(" ")
+            with col7:
+                st.metric(
+                    "Valor Recebido por Valderi",
+                    Formatting.format_monetary(profit_employee.get("VALDERI", 0)),
+                )
+            st.markdown(
+                """
+                    As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e LUCRO LIQUIDO.
+                """
             )
-        with col4:
-            st.metric("Lucro", Formatting.format_monetary(df["LUCRO LIQUIDO"].sum()))
-        with col5:
-            st.metric(
-                "Valor Recebido por Tiago",
-                Formatting.format_monetary(profit_employee.get("TIAGO", 0)),
-            )
-        with col6:
-            st.write(" ")
-        with col7:
-            st.metric(
-                "Valor Recebido por Valderi",
-                Formatting.format_monetary(profit_employee.get("VALDERI", 0)),
-            )
-        st.markdown(
-            """
-            As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e LUCRO LIQUIDO.
-        """
-        )
-        with st.expander("Detalhes por categoria"):
+
+        with st.expander("Detalhes por categoria de serviço"):
             col1, col2, col3, col4, col5, col6 = st.columns(6)
             for col, cat in zip([col1, col2, col3, col4, col5, col6], category.keys()):
                 with col:
@@ -80,7 +84,7 @@ class Dashboard:
 
     def display_profit_trend(self):
         df = self.df
-        st.header("Tendência do lucro")
+        st.header("Tendência do Faturamento/Despesas")
 
         df = df.rename(
             columns={
@@ -354,7 +358,7 @@ class Dashboard:
         st.title("Dados financeiros da empresa")
         st.markdown(
             """
-            Os valores abaixo são baseados nos dados financeiros e operacionais fornecidos pela empresa.
+            Os gráficos abaixo são baseados nos dados financeiros e operacionais fornecidos pela empresa.
         """
         )
 

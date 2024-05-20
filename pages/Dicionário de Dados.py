@@ -28,7 +28,7 @@ class DataDictionaryPage:
                 "type": "string",
                 "description": "Status da transação",
                 "example": "concluído",
-                "details": "Esta coluna indica o status atual da transação, podendo ser 'Em andamento', 'Concluído', 'Cancelado', entre outros.",
+                "details": "Esta coluna indica o status atual da transação, podendo ser 'Entregue, 'Concluído', 'Em andamento', 'Cancelado', 'Orçamento' ou 'Finalizado'.",
             },
             "PRODUTO/SERVIÇO": {
                 "type": "string",
@@ -40,21 +40,21 @@ class DataDictionaryPage:
                 "type": "string",
                 "description": "Categoria do produto ou serviço",
                 "example": "REPARO HARDWARE",
-                "details": "Esta coluna indica a categoria do produto ou serviço, como 'REPARO HARDWARE', 'REPARO SOFTWARE', 'VENDA DE PEÇAS', etc.",
+                "details": "Esta coluna indica a categoria do produto ou serviço, como 'Reparos Hardware','Reparos Software', 'Vendas Hardware', 'Vendas Dispositivos' ou 'Outros'.",
             },
-            "(R$)PEÇA": {
+            "DESPESAS": {
                 "type": "float",
                 "description": "Valor em reais de cada peça",
                 "format": "R$0,00",
                 "example": "200",
-                "details": "Esta coluna indica o valor em reais das peças utilizadas no serviço.",
+                "details": "Esta coluna indica o valor as despesas envolvendo o serviço/produto em questão.",
             },
-            "VALOR TOTAL DO SERVIÇO": {
+            "FATURAMENTO": {
                 "type": "float",
                 "description": "Valor total do serviço",
                 "format": "R$0,00",
                 "example": "450",
-                "details": "Esta coluna representa o valor total do serviço prestado (não inclui o preço de peças).",
+                "details": "Esta coluna representa o valor cobrado pelo serviço prestado.",
             },
             "TECNICO": {
                 "type": "string",
@@ -88,7 +88,7 @@ class DataDictionaryPage:
                 "description": "Lucro final obtido",
                 "format": "R$0,00",
                 "example": "150",
-                "details": "Esta coluna representa o lucro final para a assitência, obtido após o técnico receber sua comissão, calculado como 'Lucro - Valor do Técnico'.",
+                "details": "Esta coluna representa o lucro final para a assistência, obtido após o técnico receber sua comissão, calculado como 'Lucro - Valor do Técnico'.",
             },
             "F/PAGAMENTO": {
                 "type": "string",

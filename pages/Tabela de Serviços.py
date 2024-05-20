@@ -51,9 +51,9 @@ class ServiceTableApp:
         df["% DO TÉCNICO"] = (df["% DO TÉCNICO"] * 100).map("{:.0f}%".format)
         
         monetary_columns = [
-            "(R$)PEÇA",
+            "DESPESAS",
             "LUCRO BRUTO",
-            "VALOR TOTAL DO SERVIÇO",
+            "FATURAMENTO",
             "LUCRO LIQUIDO",
             "VALOR DO TÉCNICO",
         ]

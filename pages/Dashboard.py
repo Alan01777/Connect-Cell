@@ -35,11 +35,11 @@ class Dashboard:
             with col1:
                 st.metric("Total de serviços", len(df.index))
             with col2:
-                st.metric("Despesas", Formatting.format_monetary(df["(R$)PEÇA"].sum()))
+                st.metric("Despesas", Formatting.format_monetary(df["DESPESAS"].sum()))
             with col3:
                 st.metric(
                     "Faturamento",
-                    Formatting.format_monetary(df["VALOR TOTAL DO SERVIÇO"].sum()),
+                    Formatting.format_monetary(df["FATURAMENTO"].sum()),
                 )
             with col4:
                 st.metric(
@@ -73,7 +73,7 @@ class Dashboard:
                     )
                     st.write(
                         Formatting.format_monetary(
-                            category[cat]["VALOR TOTAL DO SERVIÇO"].sum()
+                            category[cat]["FATURAMENTO"].sum()
                         )
                     )
             st.markdown(
@@ -88,8 +88,8 @@ class Dashboard:
 
         df = df.rename(
             columns={
-                "(R$)PEÇA": "Despesas",
-                "VALOR TOTAL DO SERVIÇO": "Faturamento",
+                "DESPESAS": "Despesas",
+                "FATURAMENTO": "Faturamento",
                 "LUCRO LIQUIDO": "Lucro",
             }
         )
@@ -125,7 +125,7 @@ class Dashboard:
         df = self.df
         st.header("Faturamento por categoria")
         df_melt = df.melt(
-            id_vars=["DATA", "CATEGORIA"], value_vars=["VALOR TOTAL DO SERVIÇO"]
+            id_vars=["DATA", "CATEGORIA"], value_vars=["FATURAMENTO"]
         )
         df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
         df_melt.set_index("DATA", inplace=True)
@@ -171,7 +171,7 @@ class Dashboard:
     def display_category_expenses(self):
         df = self.df
         st.header("Despesas por categoria")
-        df_melt = df.melt(id_vars=["DATA", "CATEGORIA"], value_vars=["(R$)PEÇA"])
+        df_melt = df.melt(id_vars=["DATA", "CATEGORIA"], value_vars=["DESPESAS"])
         df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
         df_melt.set_index("DATA", inplace=True)
         df_melt = (
@@ -299,18 +299,18 @@ class Dashboard:
         df = self.df
         st.header("Preço médio dos serviços")
         avg_service_price = (
-            df.groupby("TECNICO")["VALOR TOTAL DO SERVIÇO"].mean().reset_index()
+            df.groupby("TECNICO")["FATURAMENTO"].mean().reset_index()
         )
 
         fig = px.bar(
             avg_service_price,
-            x="VALOR TOTAL DO SERVIÇO",
+            x="FATURAMENTO",
             y="TECNICO",
             color="TECNICO",
             color_discrete_map={"TIAGO": "#CD6A13", "VALDERI": "#8C1C13"},
-            text="VALOR TOTAL DO SERVIÇO",
+            text="FATURAMENTO",
             labels={
-                "VALOR TOTAL DO SERVIÇO": "Média Recebida (R$)",
+                "FATURAMENTO": "Média Recebida (R$)",
                 "TECNICO": "Técnico",
             },
             orientation="h",
@@ -335,7 +335,7 @@ class Dashboard:
         st.header("Top 10 clientes")
 
         top_clients = df.groupby("CLIENTE").agg(
-            {"VALOR TOTAL DO SERVIÇO": "sum", "PRODUTO/SERVIÇO": "count"}
+            {"FATURAMENTO": "sum", "PRODUTO/SERVIÇO": "count"}
         )
 
         top_clients.columns = ["Valor Total Gasto", "Número de Serviços"]

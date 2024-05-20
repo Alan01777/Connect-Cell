@@ -37,6 +37,12 @@ data_dictionary = {
         "example": "troca de tela iphone X",
         "details": "Esta coluna contém o nome do produto ou serviço associado à transação."
     },
+    "CATEGORIA":{
+        "type": "string",
+        "description": "Categoria do produto ou serviço",
+        "example": "REPARO HARDWARE",
+        "details": "Esta coluna indica a categoria do produto ou serviço, como 'REPARO HARDWARE', 'REPARO SOFTWARE', 'VENDA DE PEÇAS', etc."
+    },
     "(R$)PEÇA": {
         "type": "float",
         "description": "Valor em reais de cada peça",

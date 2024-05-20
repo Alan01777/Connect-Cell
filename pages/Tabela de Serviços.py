@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from utils import DataLoader, DateFilter, DataInserter
 from settings import page_settings
 
@@ -17,15 +18,18 @@ def display_dataframe(df):
     date_filter = DateFilter(df, "DATA")
 
     df = date_filter.filter_by_date()
-
-    search_term = st.text_input("Buscar por cliente ou técnico")
+    colI, colII = st.columns(2)
+    with colI:
+        search_term = st.text_input("Buscar por termo")
+    with colII:
+        st.selectbox("Filtrar por categoria", ["TODOS"] + list(df["CATEGORIA"].unique()))
     with col1:
         selected_status = st.selectbox(
-            "Filtrar por status", ["All"] + list(df["STATUS"].unique())
+            "Filtrar por status", ["TODOS"] + list(df["STATUS"].unique())
         )
     with col2:
         selected_technician = st.selectbox(
-            "Filtrar por técnico", ["All"] + list(df["TECNICO"].unique())
+            "Filtrar por técnico", ["TODOS"] + list(df["TECNICO"].unique())
         )
 
     df = apply_filters(df, search_term, selected_status, selected_technician)
@@ -46,12 +50,15 @@ def apply_filters(df, search_term, selected_status, selected_technician):
         df = df[
             df["CLIENTE"].str.contains(search_term, case=False)
             | df["TECNICO"].str.contains(search_term, case=False)
+            | df["CATEGORIA"].str.contains(search_term, case=False)
+            | df["PRODUTO/SERVIÇO"].str.contains(search_term, case=False)
+            | df["CONTATO"].str.contains(search_term, case=False)
         ]
 
-    if selected_status != "All":
+    if selected_status != "TODOS":
         df = df[df["STATUS"] == selected_status]
 
-    if selected_technician != "All":
+    if selected_technician != "TODOS":
         df = df[df["TECNICO"] == selected_technician]
 
     return df
@@ -60,13 +67,12 @@ def apply_filters(df, search_term, selected_status, selected_technician):
 def main():
     data = load_data()
     data = display_dataframe(data)
-    new_data = st.data_editor(data, num_rows="static")
-
-    if st.button("Atualizar"):
-        if not new_data.equals(data):
-            st.success("Data has been updated!")
-            DataInserter().update_data(new_data)
-
-
+    st.dataframe(data)
+    # data_dict = new_data.to_dict(orient="records")
+    
+    # if st.button("Salvar"):
+    #     DataInserter().update_data(pd.DataFrame.from_dict(data_dict))
+    #     st.success("Dados salvos com sucesso!")
+        
 if __name__ == "__main__":
     main()

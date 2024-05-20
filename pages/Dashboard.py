@@ -15,31 +15,41 @@ def load_data():
 def display_general_info(df):
     st.header("Informações Gerais")
     col1, col2, col3, col4 = st.columns(4)
-    col5, col6 = st.columns([3.1, 1])
+    (
+        col5,
+        col6,
+        col7,
+    ) = st.columns([1, 2, 1])
 
     profit_employee = df.groupby("TECNICO")["VALOR DO TÉCNICO"].sum()
+    category = {
+        "REPAROS HARDWARE": [df[df["CATEGORIA"] == "REPAROS HARDWARE"]],
+        "REPAROS SOFTWARE": [df[df["CATEGORIA"] == "REPAROS SOFTWARE"]],
+        "VENDAS DISPOSITIVOS": [df[df["CATEGORIA"] == "VENDAS DISPOSITIVOS"]],
+        "VENDAS HARDWARE": [df[df["CATEGORIA"] == "VENDAS HARDWARE"]],
+        "VENDAS ACESSÓRIOS": [df[df["CATEGORIA"] == "VENDAS ACESSÓRIOS"]],
+        "OUTROS": [df[df["CATEGORIA"] == "OUTROS"]],
+    }
 
     with col1:
         st.metric("Total de serviços", len(df.index))
     with col2:
-        st.metric(
-            "Total gasto com peças", Formatting.format_monetary(df["(R$)PEÇA"].sum())
-        )
+        st.metric("Despesas", Formatting.format_monetary(df["(R$)PEÇA"].sum()))
     with col3:
         st.metric(
-            "Total recebido",
+            "Faturamento",
             Formatting.format_monetary(df["VALOR TOTAL DO SERVIÇO"].sum()),
         )
     with col4:
-        st.metric(
-            "Lucro líquido", Formatting.format_monetary(df["LUCRO LIQUIDO"].sum())
-        )
+        st.metric("Lucro", Formatting.format_monetary(df["LUCRO LIQUIDO"].sum()))
     with col5:
         st.metric(
             "Valor Recebido por Tiago",
             Formatting.format_monetary(profit_employee["TIAGO"]),
         )
     with col6:
+        st.write(" ")
+    with col7:
         if "VALDERI" in profit_employee.index:
             st.metric(
                 "Valor Recebido por Valderi",
@@ -47,12 +57,83 @@ def display_general_info(df):
             )
         else:
             st.write("Nenhum dado disponível para o valor recebido por Valderi.")
+    st.markdown(
+        """
+        As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e LUCRO LIQUIDO.
+    """
+    )
+    with st.expander("Detalhes por categoria"):
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        with col1:
+            st.metric(
+                "Reparos Hardware",
+                len(category["REPAROS HARDWARE"][0].index),
+            )
+            st.write(
+                Formatting.format_monetary(
+                    category["REPAROS HARDWARE"][0]["VALOR TOTAL DO SERVIÇO"].sum()
+                )
+            )
+        with col2:
+            st.metric(
+                "Reparos Software",
+                len(category["REPAROS SOFTWARE"][0].index),
+            )
+            st.write(
+                Formatting.format_monetary(
+                    category["REPAROS SOFTWARE"][0]["VALOR TOTAL DO SERVIÇO"].sum()
+                )
+            )
+        with col3:
+            st.metric(
+                "Vendas Dispositivos",
+                len(category["VENDAS DISPOSITIVOS"][0].index),
+            )
+            st.write(
+                Formatting.format_monetary(
+                    category["VENDAS DISPOSITIVOS"][0]["VALOR TOTAL DO SERVIÇO"].sum()
+                )
+            )
+        with col4:
+            st.metric(
+                "Vendas Hardware",
+                len(category["VENDAS HARDWARE"][0].index),
+            )
+            st.write(
+                Formatting.format_monetary(
+                    category["VENDAS HARDWARE"][0]["VALOR TOTAL DO SERVIÇO"].sum()
+                )
+            )
+        with col5:
+            st.metric(
+                "Vendas Acessórios",
+                len(category["VENDAS ACESSÓRIOS"][0].index),
+            )
+            st.write(
+                Formatting.format_monetary(
+                    category["VENDAS ACESSÓRIOS"][0]["VALOR TOTAL DO SERVIÇO"].sum()
+                )
+            )
+        with col6:
+            st.metric(
+                "Outros",
+                len(category["OUTROS"][0].index),
+            )
+            st.write(
+                Formatting.format_monetary(
+                    category["OUTROS"][0]["VALOR TOTAL DO SERVIÇO"].sum()
+                )
+            )
+        st.markdown(
+            """
+                Os valores acima representam o número total de serviços e o valor total recebido para cada categoria de serviço.
+            """
+        )
 
 
 def display_profit_trend(df):
     st.header("Tendência do lucro")
 
-    # Rename columns
     df = df.rename(
         columns={
             "(R$)PEÇA": "Despesas",
@@ -61,7 +142,6 @@ def display_profit_trend(df):
         }
     )
 
-    # Melt the DataFrame to have a format suitable for px.line
     df_melt = df.melt(
         id_vars=["DATA"],
         value_vars=["Despesas", "Faturamento", "Lucro"],
@@ -69,12 +149,10 @@ def display_profit_trend(df):
         value_name="Valor",
     )
 
-    # Group by month and sum
     df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
     df_melt.set_index("DATA", inplace=True)
     df_melt = df_melt.groupby([pd.Grouper(freq="M"), "Tipo"]).sum().reset_index()
 
-    # Create figure
     fig = px.line(
         df_melt,
         x="DATA",
@@ -92,15 +170,102 @@ def display_profit_trend(df):
     st.plotly_chart(fig)
 
 
+def display_category_performance(df):
+    st.header("Faturamento por categoria")
+    df_melt = df.melt(
+        id_vars=["DATA", "CATEGORIA"], value_vars=["VALOR TOTAL DO SERVIÇO"]
+    )
+    df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
+    df_melt.set_index("DATA", inplace=True)
+    df_melt = df_melt.groupby([pd.Grouper(freq="M"), "CATEGORIA"]).sum().reset_index()
+
+    df_melt.set_index(["DATA", "CATEGORIA"], inplace=True)
+    df_melt = df_melt.reindex(
+        pd.MultiIndex.from_product(
+            [
+                pd.date_range(
+                    start=df_melt.index.get_level_values("DATA").min(),
+                    end=df_melt.index.get_level_values("DATA").max(),
+                    freq="M",
+                ),
+                df_melt.index.get_level_values("CATEGORIA").unique(),
+            ],
+            names=["DATA", "CATEGORIA"],
+        ),
+        fill_value=0,
+    ).reset_index()
+
+    fig = px.line(
+        df_melt,
+        x="DATA",
+        y="value",
+        color="CATEGORIA",
+        markers=True,
+        width=1100,
+        color_discrete_map={
+            "REPAROS HARDWARE": "#8C1C13",
+            "REPAROS SOFTWARE": "#CD6A13",
+            "VENDAS DISPOSITIVOS": "#00CD6A",
+            "VENDAS HARDWARE": "#4B0282",
+            "VENDAS ACESSÓRIOS": "#FFD700",
+            "OUTROS": "#8A2BE2",
+        },
+    )
+    fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
+    st.plotly_chart(fig)
+
+def display_category_expenses(df):
+    st.header("Despesas por categoria")
+    df_melt = df.melt(
+        id_vars=["DATA", "CATEGORIA"], value_vars=["(R$)PEÇA"]
+    )
+    df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
+    df_melt.set_index("DATA", inplace=True)
+    df_melt = df_melt.groupby([pd.Grouper(freq="M"), "CATEGORIA"]).sum().reset_index()
+    
+    df_melt.set_index(["DATA", "CATEGORIA"], inplace=True)
+    
+    df_melt = df_melt.reindex(
+        pd.MultiIndex.from_product(
+            [
+                pd.date_range(
+                    start=df_melt.index.get_level_values("DATA").min(),
+                    end=df_melt.index.get_level_values("DATA").max(),
+                    freq="M",
+                ),
+                df_melt.index.get_level_values("CATEGORIA").unique(),
+            ],
+            names=["DATA", "CATEGORIA"],
+        ),
+        fill_value=0,
+    ).reset_index()
+    
+    fig = px.line(
+        df_melt,
+        x="DATA",
+        y="value",
+        color="CATEGORIA",
+        markers=True,
+        width=1100,
+        color_discrete_map={
+            "REPAROS HARDWARE": "#8C1C13",
+            "REPAROS SOFTWARE": "#CD6A13",
+            "VENDAS DISPOSITIVOS": "#00CD6A",
+            "VENDAS HARDWARE": "#4B0282",
+            "VENDAS ACESSÓRIOS": "#FFD700",
+            "OUTROS": "#8A2BE2",
+        },
+    )
+    fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
+    st.plotly_chart(fig)
+    
 def display_technician_performance(df):
     st.header("Desempenho dos técnicos")
-    # Display a line chart with the performance of each technician
     df_melt = df.melt(id_vars=["DATA", "TECNICO"], value_vars=["VALOR DO TÉCNICO"])
     df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
     df_melt.set_index("DATA", inplace=True)
     df_melt = df_melt.groupby([pd.Grouper(freq="M"), "TECNICO"]).sum().reset_index()
 
-    # Reindex to include all combinations of dates and technicians
     df_melt.set_index(["DATA", "TECNICO"], inplace=True)
     df_melt = df_melt.reindex(
         pd.MultiIndex.from_product(
@@ -141,12 +306,14 @@ def display_data_distribution(df):
             fig = px.histogram(
                 df_filtered,
                 x="F/PAGAMENTO",
-                histnorm='percent',
+                histnorm="percent",
                 width=400,
                 nbins=len(df_filtered["F/PAGAMENTO"].unique()),
                 color_discrete_sequence=["#CD6A13"],
             )
-            fig.update_layout(xaxis_title="Formas de pagamento", yaxis_title="Porcentagem (%)")
+            fig.update_layout(
+                xaxis_title="Formas de pagamento", yaxis_title="Porcentagem (%)"
+            )
             st.plotly_chart(fig)
         else:
             st.write("Nenhum dado disponível.")
@@ -159,11 +326,13 @@ def display_data_distribution(df):
                 df_filtered,
                 x="STATUS",
                 width=400,
-                histnorm='percent',
+                histnorm="percent",
                 nbins=len(df_filtered["STATUS"].unique()),
                 color_discrete_sequence=["#8C1C13"],
             )
-            fig.update_layout(xaxis_title="Status de serviço", yaxis_title="Porcentagem (%)")
+            fig.update_layout(
+                xaxis_title="Status de serviço", yaxis_title="Porcentagem (%)"
+            )
             st.plotly_chart(fig)
         else:
             st.write("Nenhum dado disponível.")
@@ -234,17 +403,27 @@ def main():
     df = date_filter.filter_by_date()
 
     display_general_info(df)
-    st.markdown(
-        """
-        As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e LUCRO LIQUIDO.
-    """
-    )
+
     display_profit_trend(df)
     st.markdown(
         """
         O gráfico acima mostra a tendência do faturamento, das despesas e do lucro ao longo do tempo.
     """
     )
+    
+    display_category_performance(df)
+    st.markdown(
+        """
+        O gráfico acima mostra o desempenho financeiro das categorias de serviço ao longo do tempo.
+    """
+    )
+    display_category_expenses(df)
+    st.markdown(
+        """
+        O gráfico acima mostra as despesas por categoria ao longo do tempo.
+    """
+    )
+
     display_technician_performance(df)
     st.markdown(
         """

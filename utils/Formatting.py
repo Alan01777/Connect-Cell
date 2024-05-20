@@ -8,7 +8,6 @@ class Formatting:
             .replace("x", ".")
         )
     @staticmethod
-    # formati all columns in the dataframe
     def format_dataframe(df):
         monetary_columns = [
             "(R$)PEÇA",

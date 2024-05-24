@@ -72,9 +72,7 @@ class Dashboard:
                         len(category[cat].index),
                     )
                     st.write(
-                        Formatting.format_monetary(
-                            category[cat]["FATURAMENTO"].sum()
-                        )
+                        Formatting.format_monetary(category[cat]["FATURAMENTO"].sum())
                     )
             st.markdown(
                 """
@@ -124,9 +122,7 @@ class Dashboard:
     def display_category_performance(self):
         df = self.df
         st.header("Faturamento por categoria")
-        df_melt = df.melt(
-            id_vars=["DATA", "CATEGORIA"], value_vars=["FATURAMENTO"]
-        )
+        df_melt = df.melt(id_vars=["DATA", "CATEGORIA"], value_vars=["FATURAMENTO"])
         df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
         df_melt.set_index("DATA", inplace=True)
         df_melt = (
@@ -298,9 +294,7 @@ class Dashboard:
     def display_avarage_service_price(self):
         df = self.df
         st.header("Preço médio dos serviços")
-        avg_service_price = (
-            df.groupby("TECNICO")["FATURAMENTO"].mean().reset_index()
-        )
+        avg_service_price = df.groupby("TECNICO")["FATURAMENTO"].mean().reset_index()
 
         fig = px.bar(
             avg_service_price,

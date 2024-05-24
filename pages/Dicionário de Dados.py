@@ -47,7 +47,7 @@ class DataDictionaryPage:
                 "description": "Valor em reais de cada peça",
                 "format": "R$0,00",
                 "example": "200",
-                "details": "Esta coluna indica o valor as despesas envolvendo o serviço/produto em questão.",
+                "details": "Esta coluna indica o valor das despesas envolvendo o serviço/produto em questão.",
             },
             "FATURAMENTO": {
                 "type": "float",

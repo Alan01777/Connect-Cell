@@ -8,7 +8,7 @@ class DateFilter:
         self.date_column = date_column
 
     def filter_by_date(self):
-        self.df[self.date_column] = pd.to_datetime(self.df[self.date_column], format="%Y/%m/%d")
+        self.df[self.date_column] = pd.to_datetime(self.df[self.date_column], format="%d/%m/%Y")
 
         col1, col2 = st.columns(2)
         with col1:

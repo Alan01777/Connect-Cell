@@ -9,11 +9,17 @@ from settings import page_settings
 
 
 class Dashboard:
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         page_settings("Dashboard", "📊")
         self.df = DataLoader().load_data()
+        self.colors = {
+            "blue": "#1f77b4",
+            "red": "#d62728",
+            "green": "#2ca02c",
+            "purple": "#9467bd",
+            "orange": "#ff7f0e",
+            "yellow": "#ffbb78",
+        }
 
     def display_general_info(self):
         df = self.df
@@ -111,9 +117,9 @@ class Dashboard:
             markers=True,
             width=1100,
             color_discrete_map={
-                "Despesas": "#8C1C13",
-                "Faturamento": "#CD6A13",
-                "Lucro": "#00CD6A",
+                "Despesas": self.colors["red"],
+                "Faturamento": self.colors["green"],
+                "Lucro": self.colors["blue"],
             },
         )
         fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
@@ -153,12 +159,12 @@ class Dashboard:
             markers=True,
             width=1100,
             color_discrete_map={
-                "REPAROS HARDWARE": "#8C1C13",
-                "REPAROS SOFTWARE": "#CD6A13",
-                "VENDAS DISPOSITIVOS": "#00CD6A",
-                "VENDAS HARDWARE": "#4B0282",
-                "VENDAS ACESSÓRIOS": "#FFD700",
-                "OUTROS": "#8A2BE2",
+                "REPAROS HARDWARE": self.colors["blue"],
+                "REPAROS SOFTWARE": self.colors["purple"],
+                "VENDAS DISPOSITIVOS": self.colors["green"],
+                "VENDAS HARDWARE": self.colors["yellow"],
+                "VENDAS ACESSÓRIOS": self.colors["orange"],
+                "OUTROS": self.colors["red"],
             },
         )
         fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
@@ -199,12 +205,12 @@ class Dashboard:
             markers=True,
             width=1100,
             color_discrete_map={
-                "REPAROS HARDWARE": "#8C1C13",
-                "REPAROS SOFTWARE": "#CD6A13",
-                "VENDAS DISPOSITIVOS": "#00CD6A",
-                "VENDAS HARDWARE": "#4B0282",
-                "VENDAS ACESSÓRIOS": "#FFD700",
-                "OUTROS": "#8A2BE2",
+                "REPAROS HARDWARE": self.colors["red"],
+                "REPAROS SOFTWARE": self.colors["purple"],
+                "VENDAS DISPOSITIVOS": self.colors["green"],
+                "VENDAS HARDWARE":  self.colors["yellow"],
+                "VENDAS ACESSÓRIOS": self.colors["orange"],
+                "OUTROS": self.colors["blue"],
             },
         )
         fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
@@ -243,7 +249,7 @@ class Dashboard:
             color="TECNICO",
             markers=True,
             width=1100,
-            color_discrete_map={"TIAGO": "#CD6A13", "VALDERI": "#8C1C13"},
+            color_discrete_map={"TIAGO": self.colors["blue"], "VALDERI": self.colors["red"]},
         )
         fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
         st.plotly_chart(fig)
@@ -261,9 +267,10 @@ class Dashboard:
                     df_filtered,
                     x="F/PAGAMENTO",
                     histnorm="percent",
+                    text_auto=".2f",
                     width=400,
                     nbins=len(df_filtered["F/PAGAMENTO"].unique()),
-                    color_discrete_sequence=["#CD6A13"],
+                    color_discrete_sequence=[self.colors["blue"]],
                 )
                 fig.update_layout(
                     xaxis_title="Formas de pagamento", yaxis_title="Porcentagem (%)"
@@ -278,14 +285,16 @@ class Dashboard:
             if not df_filtered.empty:
                 fig = px.histogram(
                     df_filtered,
-                    x="STATUS",
+                    y="STATUS",
                     width=400,
+                    text_auto=".2f",
+                    orientation="h",
                     histnorm="percent",
                     nbins=len(df_filtered["STATUS"].unique()),
-                    color_discrete_sequence=["#8C1C13"],
+                    color_discrete_sequence=[self.colors["blue"]],
                 )
                 fig.update_layout(
-                    xaxis_title="Status de serviço", yaxis_title="Porcentagem (%)"
+                    xaxis_title="Porcentagem (%)", yaxis_title="Status de serviço"
                 )
                 st.plotly_chart(fig)
             else:
@@ -301,7 +310,7 @@ class Dashboard:
             x="FATURAMENTO",
             y="TECNICO",
             color="TECNICO",
-            color_discrete_map={"TIAGO": "#CD6A13", "VALDERI": "#8C1C13"},
+            color_discrete_map={"TIAGO": self.colors["blue"], "VALDERI": self.colors["red"]},
             text="FATURAMENTO",
             labels={
                 "FATURAMENTO": "Média Recebida (R$)",
@@ -313,7 +322,7 @@ class Dashboard:
         )
 
         fig.update_traces(
-            texttemplate="R$ %{text:.2f}", textposition="inside", width=0.4
+            texttemplate="R$ %{text:.2f}", textposition="inside", width=0.4,
         )
 
         fig.update_layout(

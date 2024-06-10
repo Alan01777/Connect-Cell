@@ -14,7 +14,7 @@ class DateFilter:
         with col1:
             start_date = st.date_input(
                 "Selecione a data inicial",
-                min_value=self.df[self.date_column].min().date(),
+                min_value=self.df[self.date_column].min().date() - relativedelta(years=1),
                 max_value=self.df[self.date_column].max().date() + relativedelta(years=1),
                 value=self.df[self.date_column].min().date(), 
                 format="DD/MM/YYYY",
@@ -22,8 +22,8 @@ class DateFilter:
         with col2:
             end_date = st.date_input(
                 "Selecione a data final",
-                min_value=self.df[self.date_column].min().date(),
-                max_value=self.df[self.date_column].max().date(),
+                min_value=self.df[self.date_column].min().date() - relativedelta(years=1),
+                max_value=self.df[self.date_column].max().date() + relativedelta(years=1),
                 value=self.df[self.date_column].max().date(),
                 format="DD/MM/YYYY",
             )

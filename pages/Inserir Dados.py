@@ -44,6 +44,7 @@ class ServiceRegistry:
                 "DEVOLUÇÃO",
                 "FINALIZADO",
                 "ORÇAMENTO",
+                "OUTROS"
             ]
             status = st.selectbox("Status", status_options)
         with col3:

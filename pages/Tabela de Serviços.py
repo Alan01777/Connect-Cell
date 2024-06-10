@@ -56,46 +56,34 @@ class ServiceTableApp:
     @staticmethod
     def format_dataframe(df):
         df["DATA"] = df["DATA"].dt.strftime("%d/%m/%Y")
-        df["% DO TÉCNICO"] = (df["% DO TÉCNICO"] * 100).map("{:.0f}%".format)
-
-        monetary_columns = [
-            "DESPESAS",
-            "LUCRO BRUTO",
-            "FATURAMENTO",
-            "LUCRO LIQUIDO",
-            "VALOR DO TÉCNICO",
-        ]
-        for col in monetary_columns:
-            df[col] = df[col].map("R${:,.2f}".format)
-
         return df
 
     def display_dataframe(self):
         st.title("Tabela de Serviços")
 
         date_filter = DateFilter(self.data, "DATA")
-        self.data = date_filter.filter_by_date()
+        filtered_data = date_filter.filter_by_date().copy()  # Create a copy of the filtered data
 
         search_term, selected_status, selected_technician = self.display_filters(
-            self.data
+            filtered_data
         )
 
-        self.data = self.apply_filters(
-            self.data, search_term, selected_status, selected_technician
+        filtered_data = self.apply_filters(
+            filtered_data, search_term, selected_status, selected_technician
         )
         
-        #self.data = self.format_dataframe(self.data)
+        filtered_data = self.format_dataframe(filtered_data)
 
-        df = st.data_editor(self.data, num_rows="dynamic")
-                
+        new_data = st.data_editor(filtered_data, num_rows="dynamic")
+        old_data = self.load_data()
         if st.button("Salvar"):
-            DataInserter().update_data(df)
+            DataInserter().update_data(new_data, old_data)
+        st.success("Dados salvos com sucesso!")
 
     def run(self):
         page_settings("Tabela de Serviços", "📊")
         self.data = self.load_data()
         self.display_dataframe()
-        #st.write(self.data)
 
 if __name__ == "__main__":
     app = ServiceTableApp()

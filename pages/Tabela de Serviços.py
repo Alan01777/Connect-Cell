@@ -19,7 +19,7 @@ class ServiceTableApp:
         with col1:
             search_term = st.text_input("Buscar por termo")
         with col2:
-            st.selectbox(
+            selected_category = st.selectbox(
                 "Filtrar por categoria", ["TODOS"] + list(df["CATEGORIA"].unique())
             )
 
@@ -32,9 +32,9 @@ class ServiceTableApp:
                 "Filtrar por técnico", ["TODOS"] + list(df["TECNICO"].unique())
             )
 
-        return search_term, selected_status, selected_technician
+        return search_term, selected_status, selected_technician, selected_category
 
-    def apply_filters(self, df, search_term, selected_status, selected_technician):
+    def apply_filters(self, df, search_term, selected_status, selected_technician, selected_category):
         if search_term:
             df = df[
                 df["CLIENTE"].str.contains(search_term, case=False)
@@ -49,6 +49,9 @@ class ServiceTableApp:
 
         if selected_technician != "TODOS":
             df = df[df["TECNICO"] == selected_technician]
+            
+        if selected_category != "TODOS":
+            df = df[df["CATEGORIA"] == selected_category]
 
         return df
 
@@ -63,14 +66,14 @@ class ServiceTableApp:
         date_filter = DateFilter(self.data, "DATA")
         filtered_data = (
             date_filter.filter_by_date().copy()
-        )  # Create a copy of the filtered data
+        )
 
-        search_term, selected_status, selected_technician = self.display_filters(
+        search_term, selected_status, selected_technician, selected_category = self.display_filters(
             filtered_data
         )
 
         filtered_data = self.apply_filters(
-            filtered_data, search_term, selected_status, selected_technician
+            filtered_data, search_term, selected_status, selected_technician, selected_category
         )
 
         filtered_data = self.format_dataframe(filtered_data)

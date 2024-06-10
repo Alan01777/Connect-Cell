@@ -28,7 +28,7 @@ class DataDictionaryPage:
                 "type": "string",
                 "description": "Status da transação",
                 "example": "concluído",
-                "details": "Esta coluna indica o status atual da transação, podendo ser 'Entregue, 'Concluído', 'Em andamento', 'Cancelado', 'Orçamento' ou 'Finalizado'.",
+                "details": "Esta coluna indica o status atual da transação, podendo ser 'Entregue, 'Concluído', 'Em andamento', 'Orçamento' ou 'Finalizado'.",
             },
             "PRODUTO/SERVIÇO": {
                 "type": "string",
@@ -45,16 +45,16 @@ class DataDictionaryPage:
             "DESPESAS": {
                 "type": "float",
                 "description": "Valor em reais de cada peça",
-                "format": "R$0,00",
+                "format": "0,00",
                 "example": "200",
-                "details": "Esta coluna indica o valor das despesas envolvendo o serviço/produto em questão.",
+                "details": "Esta coluna indica o valor em reais das despesas envolvendo o serviço/produto em questão.",
             },
             "FATURAMENTO": {
                 "type": "float",
-                "description": "Valor total do serviço",
-                "format": "R$0,00",
+                "description": "Valor total em reais do serviço",
+                "format": "0,00",
                 "example": "450",
-                "details": "Esta coluna representa o valor cobrado pelo serviço prestado.",
+                "details": "Esta coluna representa o valor em reais cobrado pelo serviço prestado.",
             },
             "TECNICO": {
                 "type": "string",
@@ -72,7 +72,7 @@ class DataDictionaryPage:
             "LUCRO BRUTO": {
                 "type": "float",
                 "description": "Lucro obtido com o serviço",
-                "format": "R$0,00",
+                "format": "0,00",
                 "example": "250",
                 "details": "Esta coluna representa o lucro obtido com a realização do serviço, calculado como 'Valor Total do Serviço - Valor das Peças'.",
             },

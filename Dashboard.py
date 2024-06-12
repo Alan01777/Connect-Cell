@@ -347,7 +347,7 @@ class Dashboard:
                         df_filtered,
                         x="F/PAGAMENTO",
                         histnorm="percent",
-                        text_auto=".2f",
+                        text_auto=".1f",
                         # width=400,
                         nbins=len(df_filtered["F/PAGAMENTO"].unique()),
                         color_discrete_sequence=[self.colors["blue"]],
@@ -376,7 +376,7 @@ class Dashboard:
                         df_filtered,
                         y="STATUS",
                         # width=400,
-                        text_auto=".2f",
+                        text_auto=".1f",
                         orientation="h",
                         histnorm="percent",
                         nbins=len(df_filtered["STATUS"].unique()),
@@ -402,13 +402,11 @@ class Dashboard:
             df = data
             st.header("Distribuição de serviços")
             df_filtered = df.dropna(subset=["PRODUTO/SERVIÇO"])
-            # group by technician and count the number of services
             df_filtered = df_filtered.groupby("TECNICO").agg(
                 {"PRODUTO/SERVIÇO": "count"}
             )
 
             if not df_filtered.empty:
-                # pie chart that show how the services are distributed between the technicians
                 fig = px.pie(
                     df_filtered,
                     values="PRODUTO/SERVIÇO",

@@ -354,7 +354,7 @@ class Dashboard:
                         xaxis_title="Formas de pagamento",
                         yaxis_title="Porcentagem (%)",
                         font=dict(
-                            size=20,  # Set the font size here
+                            size=18,  # Set the font size here
                             color="black",
                         ),
                     )
@@ -384,7 +384,7 @@ class Dashboard:
                         xaxis_title="Porcentagem (%)",
                         yaxis_title="Status de serviço",
                         font=dict(
-                            size=20,  # Set the font size here
+                            size=18,  # Set the font size here
                             color="black",
                         ),
                     )
@@ -433,7 +433,7 @@ class Dashboard:
                 xaxis=dict(title="Média Recebida (R$)"),
                 yaxis=dict(title="Técnico"),
                 font=dict(
-                    size=20,  # Set the font size here
+                    size=18,  # Set the font size here
                     color="black",
                 ),
             )

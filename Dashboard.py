@@ -1,11 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 
-from utils import DataLoader
-from utils import DateFilter
-from utils import Formatting
+from utils import DataLoader, DateFilter, Formatting
 from settings import page_settings
 
 

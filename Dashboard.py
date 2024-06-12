@@ -25,12 +25,14 @@ class Dashboard:
     def display_general_info(self, data):
         with st.container(border=True, height=650):
             df = data
-            
+
             st.header("Informações Gerais")
 
             with st.container(border=True):
-                st.metric("Total de serviços", len(df.index),
-                          )
+                st.metric(
+                    "Total de serviços",
+                    len(df.index),
+                )
 
             with st.container(border=True):
                 st.metric("Despesas", Formatting.format_monetary(df["DESPESAS"].sum()))
@@ -254,7 +256,7 @@ class Dashboard:
             markers=True,
             # width=1100,
             color_discrete_map={
-               "REPAROS HARDWARE": self.colors["blue"],
+                "REPAROS HARDWARE": self.colors["blue"],
                 "REPAROS SOFTWARE": self.colors["purple"],
                 "VENDAS DISPOSITIVOS": self.colors["green"],
                 "VENDAS HARDWARE": self.colors["yellow"],
@@ -395,53 +397,35 @@ class Dashboard:
                     "O gráfico acima mostra a distribuição de dados relacionados aos statuss dos serviços. Dados ausentes foram ignorados."
                 )
 
-    def display_average_service_price(self, data):
-        with st.container(border=True, height=540):
+    def display_service_distribution(self, data):
+        with st.container(border=True, height=605):
             df = data
-            st.header("Preço médio dos serviços")
-            avg_service_price = (
-                df.groupby("TECNICO")["FATURAMENTO"].mean().reset_index()
+            st.header("Distribuição de serviços")
+            df_filtered = df.dropna(subset=["PRODUTO/SERVIÇO"])
+            # group by technician and count the number of services
+            df_filtered = df_filtered.groupby("TECNICO").agg(
+                {"PRODUTO/SERVIÇO": "count"}
             )
 
-            fig = px.bar(
-                avg_service_price,
-                x="FATURAMENTO",
-                y="TECNICO",
-                color="TECNICO",
-                color_discrete_map={
-                    "TIAGO": self.colors["blue"],
-                    "VALDERI": self.colors["red"],
-                },
-                text="FATURAMENTO",
-                labels={
-                    "FATURAMENTO": "Média Recebida (R$)",
-                    "TECNICO": "Técnico",
-                },
-                orientation="h",
-                width=600,
-                # height=390  ,
-            )
-
-            fig.update_traces(
-                texttemplate="R$ %{text:.2f}",
-                textposition="inside",
-                width=0.4,
-            )
-
-            fig.update_layout(
-                showlegend=False,
-                xaxis=dict(title="Média Recebida (R$)"),
-                yaxis=dict(title="Técnico"),
-                font=dict(
-                    size=18,  # Set the font size here
-                    color="black",
-                ),
-            )
-
-            st.plotly_chart(fig)
+            if not df_filtered.empty:
+                # pie chart that show how the services are distributed between the technicians
+                fig = px.pie(
+                    df_filtered,
+                    values="PRODUTO/SERVIÇO",
+                    names=df_filtered.index,
+                    color_discrete_map={
+                        "TIAGO": self.colors["blue"],
+                        "VALDERI": self.colors["red"],
+                    },
+                    hole=0.4,
+                )
+                fig.update_traces(textposition="inside", textinfo="percent", textfont_size=18)
+                st.plotly_chart(fig)
+            else:
+                st.write("Nenhum dado disponível.")
             st.caption(
                 """
-                O gráfico acima representa a média de preço dos serviços realizados por cada técnico.
+                O gráfico acima mostra a distribuição de serviços entre os técnicos. 
             """
             )
 
@@ -469,6 +453,10 @@ class Dashboard:
             ].astype(int)
 
             st.table(top_clients)
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
             st.caption(
                 """
                 A tabela acima mostra os 10 principais clientes com base no valor total gasto.
@@ -515,7 +503,7 @@ class Dashboard:
 
         col1, col2 = st.columns(2)
         with col1:
-            self.display_average_service_price(df)
+            self.display_service_distribution(df)
 
         with col2:
             self.display_top_clients(df)

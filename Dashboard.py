@@ -22,13 +22,15 @@ class Dashboard:
             "yellow": "#ffbb78",
         }
 
-    def display_general_info(self):
+    def display_general_info(self, data):
         with st.container(border=True, height=650):
-            df = self.df
+            df = data
+            
             st.header("Informações Gerais")
 
             with st.container(border=True):
-                st.metric("Total de serviços", len(df.index))
+                st.metric("Total de serviços", len(df.index),
+                          )
 
             with st.container(border=True):
                 st.metric("Despesas", Formatting.format_monetary(df["DESPESAS"].sum()))
@@ -50,16 +52,16 @@ class Dashboard:
                     """
             )
 
-    def details_by_category(self):
+    def details_by_category(self, data):
         with st.container(border=True, height=1242):
             st.header("Detalhes por categoria")
-            df = self.df
+            df = data
             category = {
-                "Reparos Hardware": df[df["CATEGORIA"] == "REPAROS HARDWARE"],
-                "Reparos Software": df[df["CATEGORIA"] == "REPAROS SOFTWARE"],
-                "Vendas Dispositivos": df[df["CATEGORIA"] == "VENDAS DISPOSITIVOS"],
-                "Vendas Hardware": df[df["CATEGORIA"] == "VENDAS HARDWARE"],
-                "Vendas Acessórios": df[df["CATEGORIA"] == "VENDAS ACESSÓRIOS"],
+                "Reparos de Hardware": df[df["CATEGORIA"] == "REPAROS HARDWARE"],
+                "Reparos de Software": df[df["CATEGORIA"] == "REPAROS SOFTWARE"],
+                "Vendas de Dispositivos": df[df["CATEGORIA"] == "VENDAS DISPOSITIVOS"],
+                "Vendas de Hardware": df[df["CATEGORIA"] == "VENDAS HARDWARE"],
+                "Vendas de Acessórios": df[df["CATEGORIA"] == "VENDAS ACESSÓRIOS"],
                 "Outros": df[df["CATEGORIA"] == "OUTROS"],
             }
 
@@ -83,10 +85,10 @@ class Dashboard:
             """
             )
 
-    def details_by_technician(self):
+    def details_by_technician(self, data):
         with st.container(border=True, height=600):
             st.subheader("Detalhes por técnico")
-            df = self.df
+            df = data
             technicians = {
                 "TIAGO": df[df["TECNICO"] == "TIAGO"],
                 "VALDERI": df[df["TECNICO"] == "VALDERI"],
@@ -111,12 +113,12 @@ class Dashboard:
                 "O Painel acima mostra um resumo do número total de serviços e a receita acumulada por cada técnico."
             )
 
-    def display_profit_trend(self):
+    def display_profit_trend(self, data):
         col1, col2 = st.columns([4, 2], gap="small")
 
         with col1:
             with st.container(border=True, height=650):
-                df = self.df
+                df = data
                 st.header("Tendência do Faturamento/Despesas")
 
                 df = df.rename(
@@ -163,10 +165,10 @@ class Dashboard:
         """
                 )
         with col2:
-            self.display_general_info()
+            self.display_general_info(data)
 
-    def display_category_performance(self):
-        df = self.df
+    def display_category_performance(self, data):
+        df = data
         st.header("Faturamento por categoria")
         df_melt = df.melt(id_vars=["DATA", "CATEGORIA"], value_vars=["FATURAMENTO"])
         df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
@@ -217,8 +219,8 @@ class Dashboard:
                 """
         )
 
-    def display_category_expenses(self):
-        df = self.df
+    def display_category_expenses(self, data):
+        df = data
         st.header("Despesas por categoria")
         df_melt = df.melt(id_vars=["DATA", "CATEGORIA"], value_vars=["DESPESAS"])
         df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
@@ -252,12 +254,12 @@ class Dashboard:
             markers=True,
             # width=1100,
             color_discrete_map={
-                "REPAROS HARDWARE": self.colors["red"],
+               "REPAROS HARDWARE": self.colors["blue"],
                 "REPAROS SOFTWARE": self.colors["purple"],
                 "VENDAS DISPOSITIVOS": self.colors["green"],
                 "VENDAS HARDWARE": self.colors["yellow"],
                 "VENDAS ACESSÓRIOS": self.colors["orange"],
-                "OUTROS": self.colors["blue"],
+                "OUTROS": self.colors["red"],
             },
         )
         fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
@@ -268,9 +270,9 @@ class Dashboard:
                 """
         )
 
-    def display_technician_performance(self):
+    def display_technician_performance(self, data):
         col1, col2 = st.columns([4, 2], gap="small")
-        df = self.df
+        df = data
         with col1:
             with st.container(border=True):
                 st.header("Receitas Mensais dos Técnicos")
@@ -328,10 +330,10 @@ class Dashboard:
                     """
                 )
         with col2:
-            self.details_by_technician()
+            self.details_by_technician(data)
 
-    def display_data_distribution(self):
-        df = self.df
+    def display_data_distribution(self, data):
+        df = data
         col1, col2 = st.columns(2)
 
         with col1:
@@ -352,7 +354,7 @@ class Dashboard:
                         xaxis_title="Formas de pagamento",
                         yaxis_title="Porcentagem (%)",
                         font=dict(
-                            size=16,  # Set the font size here
+                            size=18,  # Set the font size here
                             color="black",
                         ),
                     )
@@ -382,7 +384,7 @@ class Dashboard:
                         xaxis_title="Porcentagem (%)",
                         yaxis_title="Status de serviço",
                         font=dict(
-                            size=16,  # Set the font size here
+                            size=18,  # Set the font size here
                             color="black",
                         ),
                     )
@@ -393,9 +395,9 @@ class Dashboard:
                     "O gráfico acima mostra a distribuição de dados relacionados aos statuss dos serviços. Dados ausentes foram ignorados."
                 )
 
-    def display_average_service_price(self):
+    def display_average_service_price(self, data):
         with st.container(border=True, height=540):
-            df = self.df
+            df = data
             st.header("Preço médio dos serviços")
             avg_service_price = (
                 df.groupby("TECNICO")["FATURAMENTO"].mean().reset_index()
@@ -417,7 +419,7 @@ class Dashboard:
                 },
                 orientation="h",
                 width=600,
-                #height=390  ,
+                # height=390  ,
             )
 
             fig.update_traces(
@@ -430,6 +432,10 @@ class Dashboard:
                 showlegend=False,
                 xaxis=dict(title="Média Recebida (R$)"),
                 yaxis=dict(title="Técnico"),
+                font=dict(
+                    size=18,  # Set the font size here
+                    color="black",
+                ),
             )
 
             st.plotly_chart(fig)
@@ -439,9 +445,9 @@ class Dashboard:
             """
             )
 
-    def display_top_clients(self):
+    def display_top_clients(self, data):
         with st.container(border=True):
-            df = self.df
+            df = data
             st.header("Top 10 clientes")
 
             top_clients = df.groupby("CLIENTE").agg(
@@ -482,37 +488,37 @@ class Dashboard:
         date_filter = DateFilter(df, "DATA")
         df = date_filter.filter_by_date()
 
-        self.display_profit_trend()
+        self.display_profit_trend(df)
 
         st.caption("---")
 
         col1, col2 = st.columns([4, 2], gap="small")
         with col1:
             with st.container(border=True):
-                self.display_category_performance()
+                self.display_category_performance(df)
 
                 st.markdown("---")
-                self.display_category_expenses()
+                self.display_category_expenses(df)
 
         with col2:
-            self.details_by_category()
+            self.details_by_category(df)
 
         st.caption("---")
 
-        self.display_technician_performance()
+        self.display_technician_performance(df)
 
         st.caption("---")
 
-        self.display_data_distribution()
+        self.display_data_distribution(df)
 
         st.caption("---")
 
         col1, col2 = st.columns(2)
         with col1:
-            self.display_average_service_price()
+            self.display_average_service_price(df)
 
         with col2:
-            self.display_top_clients()
+            self.display_top_clients(df)
 
 
 if __name__ == "__main__":

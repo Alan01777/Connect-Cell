@@ -7,24 +7,27 @@ from settings import page_settings
 
 class ServiceRegistry:
     def __init__(self):
-        page_settings("Dashboard", "📊")
+        st.set_page_config(
+            page_title="Registro de Serviços",
+            layout="wide",
+            
+        )
 
     def insert(self):
 
         st.title("Registro de Serviços")
-
+        
         st.header("Detalhes do Serviço")
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
 
         with col1:
             client = st.text_input("Cliente")
         with col2:
             contact = st.text_input("Contato")
-        with col3:
+        with col2:
             date = st.date_input("Data")
             date_str = date.strftime("%d/%m/%Y")
 
-        col1, col2, col3 = st.columns(3)
         with col1:
             category = st.selectbox(
                 "Categoria",
@@ -47,7 +50,7 @@ class ServiceRegistry:
                 "OUTROS"
             ]
             status = st.selectbox("Status", status_options)
-        with col3:
+        with col1:
             technician = st.selectbox("Técnico", ["TIAGO", "VALDERI"])
         product = st.text_area("Descrição do Produto/Serviço")
 
@@ -58,7 +61,7 @@ class ServiceRegistry:
             part_value = st.number_input("Total gasto com peças")
             service_value = st.number_input("Valor do Serviço")
         with col2:
-            technician_percentage = st.selectbox("% do técnico", [30, 50, 80, 100])
+            technician_percentage = st.selectbox("Porcentagem do técnico (%)", [30, 50, 80, 100])
             payment_method = st.selectbox(
                 "Método de pagamento",
                 ["DINHEIRO", "CREDITO", "DEBITO", "PIX", "OUTROS"],

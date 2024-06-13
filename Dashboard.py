@@ -4,6 +4,7 @@ import plotly.express as px
 
 from utils import DataLoader, DateFilter, Formatting
 from settings import page_settings
+from streamlit_extras.stylable_container import stylable_container
 
 
 class Dashboard:
@@ -20,7 +21,18 @@ class Dashboard:
         }
 
     def display_general_info(self, data):
-        with st.container(border=True, height=650):
+        with stylable_container(
+            key="Informações_Gerais",
+            css_styles="""
+                {
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 0.5rem;
+                    padding: calc(1em - 1px);
+                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+                    background-color: #f9f9f9;
+                }
+            """,
+        ):
             df = data
 
             st.header("Informações Gerais")
@@ -52,7 +64,18 @@ class Dashboard:
             )
 
     def details_by_category(self, data):
-        with st.container(border=True, height=1242):
+        with stylable_container(
+            key="Detalhes_por_categoria",
+            css_styles="""
+                {
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 0.5rem;
+                    padding: calc(1em - 1px);
+                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+                    background-color: #f9f9f9;
+                }
+            """,
+        ):
             st.header("Detalhes por categoria")
             df = data
             category = {
@@ -85,7 +108,18 @@ class Dashboard:
             )
 
     def details_by_technician(self, data):
-        with st.container(border=True, height=600):
+        with stylable_container(
+            key="Detalhes_por_técnico",
+            css_styles="""
+                {
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 0.5rem;
+                    padding: calc(1em - 1px);
+                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+                    background-color: #f9f9f9;
+                }
+            """,
+        ):
             st.subheader("Detalhes por técnico")
             df = data
             technicians = {
@@ -109,14 +143,26 @@ class Dashboard:
                             Formatting.format_monetary(data["VALOR DO TÉCNICO"].sum()),
                         )
             st.caption(
-                "O Painel acima mostra um resumo do número total de serviços e a receita acumulada por cada técnico."
+                "O Painel acima mostra um resumo do número total de serviços e a receita acumulada por técnico."
             )
 
     def display_profit_trend(self, data):
         col1, col2 = st.columns([4, 2], gap="small")
 
         with col1:
-            with st.container(border=True, height=650):
+
+            with stylable_container(
+                key="Tenência_do_Faturamento_Despesas",
+                css_styles="""
+                {
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 0.5rem;
+                    padding: calc(1em - 1px);
+                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+                    background-color: #f9f9f9;
+                }
+                """,
+            ):
                 df = data
                 st.header("Tendência do Faturamento/Despesas")
 
@@ -147,7 +193,8 @@ class Dashboard:
                     y="Valor",
                     color="Tipo",
                     markers=True,
-                    # width=1100,
+                    width=1050,
+                    height=500,
                     color_discrete_map={
                         "Despesas": self.colors["red"],
                         "Faturamento": self.colors["green"],
@@ -160,8 +207,8 @@ class Dashboard:
                 st.plotly_chart(fig)
                 st.caption(
                     """
-            O gráfico acima mostra a tendência do faturamento, das despesas e do lucro ao longo do tempo.
-        """
+                O gráfico acima mostra a tendência do faturamento, das despesas e do lucro ao longo do tempo.
+            """
                 )
         with col2:
             self.display_general_info(data)
@@ -199,7 +246,7 @@ class Dashboard:
             # text="value",
             color="CATEGORIA",
             markers=True,
-            # width=122,
+            width=1050,
             color_discrete_map={
                 "REPAROS HARDWARE": self.colors["blue"],
                 "REPAROS SOFTWARE": self.colors["purple"],
@@ -251,7 +298,7 @@ class Dashboard:
             y="value",
             color="CATEGORIA",
             markers=True,
-            # width=1100,
+            width=1050,
             color_discrete_map={
                 "REPAROS HARDWARE": self.colors["blue"],
                 "REPAROS SOFTWARE": self.colors["purple"],
@@ -273,7 +320,18 @@ class Dashboard:
         col1, col2 = st.columns([4, 2], gap="small")
         df = data
         with col1:
-            with st.container(border=True):
+            with stylable_container(
+                key="Tenência_do_Faturamento_Despesas",
+                css_styles="""
+                {
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 0.5rem;
+                    padding: calc(1em - 1px);
+                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+                    background-color: #f9f9f9;
+                }
+                """,
+            ):
                 st.header("Receitas Mensais dos Técnicos")
                 df_melt = df.melt(
                     id_vars=["DATA", "TECNICO"], value_vars=["VALOR DO TÉCNICO"]
@@ -313,7 +371,8 @@ class Dashboard:
                     y="value",
                     color="TECNICO",
                     markers=True,
-                    # width=1100,
+                    width=1050,
+                    height=320,
                     color_discrete_map={
                         "TIAGO": self.colors["blue"],
                         "VALDERI": self.colors["red"],
@@ -336,7 +395,18 @@ class Dashboard:
         col1, col2 = st.columns(2)
 
         with col1:
-            with st.container(border=True):
+            with stylable_container(
+                key="Formas_de_Pagamento_Status",
+                css_styles="""
+                {
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 0.5rem;
+                    padding: calc(1em - 1px);
+                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+                    background-color: #f9f9f9;
+                }
+                """,
+            ):
                 st.header("Formas de pagamento")
                 df_filtered = df.dropna(subset=["F/PAGAMENTO"])
                 if not df_filtered.empty:
@@ -345,7 +415,7 @@ class Dashboard:
                         x="F/PAGAMENTO",
                         histnorm="percent",
                         text_auto=".1f",
-                        # width=400,
+                        width=800,
                         nbins=len(df_filtered["F/PAGAMENTO"].unique()),
                         color_discrete_sequence=[self.colors["blue"]],
                     )
@@ -365,14 +435,25 @@ class Dashboard:
                 )
 
         with col2:
-            with st.container(border=True):
+            with stylable_container(
+                key="Status_de_Serviço",
+                css_styles="""
+                {
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 0.5rem;
+                    padding: calc(1em - 1px);
+                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+                    background-color: #f9f9f9;
+                }
+                """,
+            ):
                 st.header("Status de serviço")
                 df_filtered = df.dropna(subset=["STATUS"])
                 if not df_filtered.empty:
                     fig = px.histogram(
                         df_filtered,
                         y="STATUS",
-                        # width=400,
+                        width=800,
                         text_auto=".1f",
                         orientation="h",
                         histnorm="percent",
@@ -395,7 +476,18 @@ class Dashboard:
                 )
 
     def display_service_distribution(self, data):
-        with st.container(border=True, height=605):
+        with stylable_container(
+            key="Distribuição_de_Serviços",
+            css_styles="""
+                {
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 0.5rem;
+                    padding: calc(1em - 1px);
+                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+                    background-color: #f9f9f9;
+                }
+            """,
+        ):
             df = data
             st.header("Distribuição de serviços")
             df_filtered = df.dropna(subset=["PRODUTO/SERVIÇO"])
@@ -407,6 +499,8 @@ class Dashboard:
                 fig = px.pie(
                     df_filtered,
                     values="PRODUTO/SERVIÇO",
+                    width=800,
+                    height=459,
                     names=df_filtered.index,
                     color_discrete_map={
                         "TIAGO": self.colors["blue"],
@@ -414,7 +508,9 @@ class Dashboard:
                     },
                     hole=0.4,
                 )
-                fig.update_traces(textposition="inside", textinfo="percent", textfont_size=18)
+                fig.update_traces(
+                    textposition="inside", textinfo="percent", textfont_size=18
+                )
                 st.plotly_chart(fig)
             else:
                 st.write("Nenhum dado disponível.")
@@ -425,7 +521,18 @@ class Dashboard:
             )
 
     def display_top_clients(self, data):
-        with st.container(border=True):
+        with stylable_container(
+            key="Top_10_Clientes",
+            css_styles="""
+                {
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 0.5rem;
+                    padding: calc(1em - 1px);
+                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+                    background-color: #f9f9f9;
+                }
+            """,
+        ):
             df = data
             st.header("Top 10 clientes")
 
@@ -447,7 +554,7 @@ class Dashboard:
                 "Número de Serviços"
             ].astype(int)
 
-            st.table(top_clients)
+            st.dataframe(top_clients, width=800)
             st.write("")
             st.write("")
             st.write("")
@@ -477,7 +584,18 @@ class Dashboard:
 
         col1, col2 = st.columns([4, 2], gap="small")
         with col1:
-            with st.container(border=True):
+            with stylable_container(
+                key="Categoria_Performance_Expenses",
+                css_styles="""
+                {
+                    border: 1px solid rgba(49, 51, 63, 0.2);
+                    border-radius: 0.5rem;
+                    padding: calc(1em - 1px);
+                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
+                    background-color: #f9f9f9;
+                }
+                """,
+            ):
                 self.display_category_performance(df)
 
                 st.markdown("---")

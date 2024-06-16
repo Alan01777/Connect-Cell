@@ -57,11 +57,12 @@ class Dashboard:
                     "Lucro", Formatting.format_monetary(df["LUCRO LIQUIDO"].sum())
                 )
 
-            st.caption(
-                """
-                        As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e LUCRO LIQUIDO.
+            with st.container():
+                st.caption(
                     """
-            )
+                            As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e LUCRO LIQUIDO.
+                        """
+                )
 
     def details_by_category(self, data):
         with stylable_container(
@@ -98,14 +99,15 @@ class Dashboard:
                         )
                     with col2:
                         st.metric(
-                            "Lucro Final",
+                            "Lucro",
                             Formatting.format_monetary(data["LUCRO LIQUIDO"].sum()),
                         )
-            st.caption(
+            with st.container():
+                st.caption(
+                    """
+                    O painel acima mostra um resumo do número total de serviços e o lucro final por categoria.
                 """
-                Os gráficos acima mostram o número total de serviços e o valor total arrecadado para cada categoria de serviço.
-            """
-            )
+                )
 
     def details_by_technician(self, data):
         with stylable_container(
@@ -120,14 +122,31 @@ class Dashboard:
                 }
             """,
         ):
+            # convert the cartegory names to normal names
+            data["CATEGORIA"] = data["CATEGORIA"].apply(
+                lambda x: "R. Hardware"
+                if x == "REPAROS HARDWARE"
+                else "R. de Software"
+                if x == "REPAROS SOFTWARE"
+                else "V. de Dispositivos"
+                if x == "VENDAS DISPOSITIVOS"
+                else "V. de Hardware"
+                if x == "VENDAS HARDWARE"
+                else "V. de Acessórios"
+                if x == "VENDAS ACESSÓRIOS"
+                else "Outros"
+                if x == "OUTROS"
+                else x
+            )
+            
             st.subheader("Detalhes por técnico")
             df = data
             technicians = {
-                "TIAGO": df[df["TECNICO"] == "TIAGO"],
+                "Tiago": df[df["TECNICO"] == "TIAGO"],
                 "VALDERI": df[df["TECNICO"] == "VALDERI"],
                 # Add more technicians here if needed
             }
-
+            category = data["CATEGORIA"].mode().values[0]
             for name, data in technicians.items():
                 with st.container(border=True):
                     st.write(name)
@@ -137,14 +156,18 @@ class Dashboard:
                             "Número de Serviços",
                             len(data.index),
                         )
+                        st.metric("Categoria em que mais trabalhou: ", category)
                     with col2:
                         st.metric(
                             "Receita Acumulada",
                             Formatting.format_monetary(data["VALOR DO TÉCNICO"].sum()),
                         )
-            st.caption(
-                "O Painel acima mostra um resumo do número total de serviços e a receita acumulada por técnico."
-            )
+                        st.metric("Numero de serviços da categoria: ", data["CATEGORIA"].value_counts().max())
+                    
+            with st.container():
+                st.caption(
+                    "O Painel acima mostra um resumo do número total de serviços e a receita acumulada por técnico."
+                )
 
     def display_profit_trend(self, data):
         col1, col2 = st.columns([4, 2], gap="small")
@@ -194,7 +217,7 @@ class Dashboard:
                     color="Tipo",
                     markers=True,
                     width=1050,
-                    height=500,
+                    height=483,
                     color_discrete_map={
                         "Despesas": self.colors["red"],
                         "Faturamento": self.colors["green"],
@@ -247,6 +270,7 @@ class Dashboard:
             color="CATEGORIA",
             markers=True,
             width=1050,
+            height=425,
             color_discrete_map={
                 "REPAROS HARDWARE": self.colors["blue"],
                 "REPAROS SOFTWARE": self.colors["purple"],
@@ -299,6 +323,7 @@ class Dashboard:
             color="CATEGORIA",
             markers=True,
             width=1050,
+            height=425,
             color_discrete_map={
                 "REPAROS HARDWARE": self.colors["blue"],
                 "REPAROS SOFTWARE": self.colors["purple"],
@@ -372,7 +397,7 @@ class Dashboard:
                     color="TECNICO",
                     markers=True,
                     width=1050,
-                    height=320,
+                    height=485,
                     color_discrete_map={
                         "TIAGO": self.colors["blue"],
                         "VALDERI": self.colors["red"],
@@ -500,7 +525,7 @@ class Dashboard:
                     df_filtered,
                     values="PRODUTO/SERVIÇO",
                     width=800,
-                    height=459,
+                    height=450,
                     names=df_filtered.index,
                     color_discrete_map={
                         "TIAGO": self.colors["blue"],
@@ -566,7 +591,7 @@ class Dashboard:
             )
 
     def main(self):
-        st.title("Dados financeiros da empresa")
+        st.title("Dashboard Financeiro e operacional")
         st.write(
             """
             Os gráficos abaixo são baseados nos dados financeiros e operacionais fornecidos pela empresa.
@@ -598,7 +623,8 @@ class Dashboard:
             ):
                 self.display_category_performance(df)
 
-                st.markdown("---")
+                with st.container():
+                    st.markdown("---")
                 self.display_category_expenses(df)
 
         with col2:

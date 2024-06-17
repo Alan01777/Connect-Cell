@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from utils import DataLoader, DateFilter, Formatting, Logo
+from utils import DataLoader, DateFilter, Formatting
 from settings import page_settings
 from streamlit_extras.stylable_container import stylable_container
-from streamlit_extras.app_logo import add_logo
+
 
 
 class Dashboard:
@@ -592,7 +592,6 @@ class Dashboard:
             )
 
     def main(self):
-        add_logo("logo.png", height=250)
         st.title("Dashboard Financeiro e operacional")
         st.write(
             """

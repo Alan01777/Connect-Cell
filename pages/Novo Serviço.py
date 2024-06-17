@@ -4,7 +4,6 @@ import pandas as pd
 from utils import DataLoader, DataInserter
 from settings import page_settings
 
-
 class ServiceRegistry:
     def __init__(self):
         st.set_page_config(
@@ -14,7 +13,6 @@ class ServiceRegistry:
         )
 
     def insert(self):
-
         st.title("Registro de Serviços")
         
         st.header("Detalhes do Serviço")

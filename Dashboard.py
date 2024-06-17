@@ -187,7 +187,7 @@ class Dashboard:
                 """,
             ):
                 df = data
-                st.header("Tendência do Faturamento/Despesas")
+                st.header("Análise mensal de desempenho financeiro")
 
                 df = df.rename(
                     columns={
@@ -230,7 +230,7 @@ class Dashboard:
                 st.plotly_chart(fig)
                 st.caption(
                     """
-                O gráfico acima mostra a tendência do faturamento, das despesas e do lucro ao longo do tempo.
+                O gráfico acima mostra a análise mensal de desempenho financeiro ao longo do tempo.
             """
                 )
         with col2:
@@ -357,7 +357,7 @@ class Dashboard:
                 }
                 """,
             ):
-                st.header("Receitas Mensais dos Técnicos")
+                st.header("Receita Mensal por Técnico")
                 df_melt = df.melt(
                     id_vars=["DATA", "TECNICO"], value_vars=["VALOR DO TÉCNICO"]
                 )

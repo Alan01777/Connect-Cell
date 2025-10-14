@@ -1,152 +1,420 @@
+"""
+Tabela de Serviços - Versão Refatorada
+Visualização, filtros avançados e edição de serviços
+"""
 import streamlit as st
 import pandas as pd
-from utils import DataLoader, DateFilter, DataInserter
+from datetime import datetime
+
+from utils import (
+    DataLoader, DateFilter, DataInserter, Formatting,
+    ThemeManager, InsightBox, ExportButton, MetricCard, KPIRow
+)
 from settings import page_settings
+from config import (
+    get_status_options, get_categoria_options,
+    get_tecnico_options, get_forma_pagamento_options,
+    APP_CONFIG, COLORS
+)
 
 
-class ServiceTableApp:
+class ServiceTableV2:
+    """Tabela de serviços refatorada com melhorias de UX"""
+
     def __init__(self):
-        self.data = None
+        """Inicializa a aplicação"""
+        page_settings("Tabela de Serviços", "📋")
+        ThemeManager.inject_custom_css()
 
-    @staticmethod
-    @st.cache_data
-    def load_data():
-        return DataLoader().load_data()
+        with st.spinner("📊 Carregando dados..."):
+            self.data = DataLoader().load_data()
 
-    def display_filters(self, df):
-        col1, col2 = st.columns(2)
+        if self.data.empty:
+            st.error("❌ Não foi possível carregar os dados.")
+            st.stop()
 
-        with col1:
-            search_term = st.text_input("Buscar por termo")
-        with col2:
-            selected_category = st.selectbox(
-                "Filtrar por categoria", ["TODOS"] + list(df["CATEGORIA"].unique())
-            )
+    def render_header(self):
+        """Renderiza cabeçalho da página"""
+        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
 
         with col1:
-            selected_status = st.selectbox(
-                "Filtrar por status", ["TODOS"] + list(df["STATUS"].unique())
-            )
+            st.title("📋 Tabela de Serviços")
+            st.markdown("*Visualize e edite os registros de serviços*")
+
         with col2:
-            selected_technician = st.selectbox(
-                "Filtrar por técnico", ["TODOS"] + list(df["TECNICO"].unique())
+            if st.button("🔄 Atualizar", use_container_width=True):
+                DataLoader.clear_cache()
+                st.rerun()
+
+        with col3:
+            ExportButton.render_csv_download(
+                self.data,
+                f"servicos_{datetime.now().strftime('%Y%m%d')}.csv"
             )
 
-        return search_term, selected_status, selected_technician, selected_category
+        with col4:
+            if st.button("➕ Novo", use_container_width=True):
+                st.switch_page("pages/Novo Serviço.py")
 
-    def apply_filters(self, df, search_term, selected_status, selected_technician, selected_category):
-        if search_term:
-            df = df[
-                df["CLIENTE"].str.contains(search_term, case=False)
-                | df["TECNICO"].str.contains(search_term, case=False)
-                | df["CATEGORIA"].str.contains(search_term, case=False)
-                | df["PRODUTO/SERVIÇO"].str.contains(search_term, case=False)
-                | df["CONTATO"].str.contains(search_term, case=False)
-            ]
+    def render_summary_kpis(self, df: pd.DataFrame):
+        """Renderiza KPIs resumidos dos dados filtrados"""
+        total_services = len(df)
+        total_revenue = df["FATURAMENTO"].sum()
+        total_profit = df["LUCRO LIQUIDO"].sum()
+        avg_ticket = df["FATURAMENTO"].mean() if total_services > 0 else 0
 
-        if selected_status != "TODOS":
-            df = df[df["STATUS"] == selected_status]
-
-        if selected_technician != "TODOS":
-            df = df[df["TECNICO"] == selected_technician]
-            
-        if selected_category != "TODOS":
-            df = df[df["CATEGORIA"] == selected_category]
-
-        return df
-
-    @staticmethod
-    def format_dataframe(df):
-        df["DATA"] = df["DATA"].dt.strftime("%d/%m/%Y")
-        return df
-
-    def display_dataframe(self):
-        st.title("Tabela de Serviços")
-
-        date_filter = DateFilter(self.data, "DATA")
-        filtered_data = (
-            date_filter.filter_by_date().copy()
-        )
-
-        search_term, selected_status, selected_technician, selected_category = self.display_filters(
-            filtered_data
-        )
-
-        filtered_data = self.apply_filters(
-            filtered_data, search_term, selected_status, selected_technician, selected_category
-        )
-
-        filtered_data = self.format_dataframe(filtered_data)
-
-        new_data = st.data_editor(
-            filtered_data,
-            num_rows="fixed",
-            column_config={
-                "STATUS": st.column_config.SelectboxColumn(
-                    "STATUS",
-                    help="Selecione o status do serviço",
-                    width="small",
-                    options=[
-                        "EM ANDAMENTO",
-                        "ENTREGUE",
-                        "DEVOLUÇÃO",
-                        "FINALIZADO",
-                        "ORÇAMENTO",
-                        "OUTROS",
-                    ],
-                    required=True,
-                ),
-                "CATEGORIA": st.column_config.SelectboxColumn(
-                    "CATEGORIA",
-                    help="Selecione a categoria do serviço",
-                    width="medium",
-                    options=[
-                        "REPAROS HARDWARE",
-                        "REPAROS SOFTWARE",
-                        "VENDAS DISPOSITIVOS",
-                        "VENDAS HARDWARE",
-                        "VENDAS ACESSÓRIOS",
-                        "OUTROS",
-                    ],
-                    required=True,
-                ),
-                "TECNICO": st.column_config.SelectboxColumn(
-                    "TECNICO",
-                    help="Selecione o técnico responsável pelo serviço",
-                    width="medium",
-                    options=["TIAGO", "VALDERI"],
-                    required=True,
-                ),
-                "% DO TÉCNICO": st.column_config.SelectboxColumn(
-                    "% DO TÉCNICO",
-                    help="Porcentagem do valor do serviço que será destinado ao técnico",
-                    width="small",
-                    options=[0.3, 0.5, 0.8, 1],
-                    required=True,
-                ),
-                "F/PAGAMENTO": st.column_config.SelectboxColumn(
-                    "F/PAGAMENTO",
-                    help="Selecione o método de pagamento",
-                    width="medium",
-                    options=["DINHEIRO", "CREDITO", "DEBITO", "PIX", "OUTROS"],
-                    required=True,
-                ),
+        kpi_data = [
+            {
+                "label": "Total de Serviços",
+                "value": f"{total_services:,}",
+                "icon": "📊"
             },
-        )
-        old_data = self.load_data()
-        if st.button("Salvar"):
-            try:
-                DataInserter().update_data(new_data, old_data)
-                st.success("Dados salvos com sucesso!")
-            except Exception as e:
-                st.error(f"Erro ao salvar dados: {e}")
+            {
+                "label": "Faturamento Total",
+                "value": Formatting.format_monetary(total_revenue),
+                "icon": "💰"
+            },
+            {
+                "label": "Lucro Total",
+                "value": Formatting.format_monetary(total_profit),
+                "icon": "📈"
+            },
+            {
+                "label": "Ticket Médio",
+                "value": Formatting.format_monetary(avg_ticket),
+                "icon": "🎯"
+            },
+        ]
 
-    def run(self):
-        page_settings("Tabela de Serviços", "📊")
-        self.data = self.load_data()
-        self.display_dataframe()
+        KPIRow.render(kpi_data)
+
+    def render_filters(self, df: pd.DataFrame) -> dict:
+        """
+        Renderiza painel de filtros
+
+        Returns:
+            Dicionário com valores dos filtros
+        """
+        st.subheader("🔍 Filtros")
+
+        filters = {}
+
+        # Linha 1: Busca e Categoria
+        col1, col2 = st.columns(2)
+        with col1:
+            filters['search'] = st.text_input(
+                "🔎 Buscar",
+                placeholder="Cliente, técnico, produto...",
+                help="Busca em múltiplos campos"
+            )
+        with col2:
+            filters['categoria'] = st.selectbox(
+                "📦 Categoria",
+                ["TODOS"] + get_categoria_options()
+            )
+
+        # Linha 2: Status e Técnico
+        col1, col2 = st.columns(2)
+        with col1:
+            filters['status'] = st.selectbox(
+                "📌 Status",
+                ["TODOS"] + get_status_options()
+            )
+        with col2:
+            filters['tecnico'] = st.selectbox(
+                "👨‍🔧 Técnico",
+                ["TODOS"] + get_tecnico_options()
+            )
+
+        return filters
+
+    def apply_filters(self, df: pd.DataFrame, filters: dict) -> pd.DataFrame:
+        """
+        Aplica filtros ao DataFrame
+
+        Args:
+            df: DataFrame original
+            filters: Dicionário com filtros
+
+        Returns:
+            DataFrame filtrado
+        """
+        filtered_df = df.copy()
+
+        # Busca textual
+        if filters['search']:
+            search_term = filters['search'].lower()
+            mask = (
+                filtered_df["CLIENTE"].str.lower().str.contains(search_term, na=False) |
+                filtered_df["TECNICO"].str.lower().str.contains(search_term, na=False) |
+                filtered_df["CATEGORIA"].str.lower().str.contains(search_term, na=False) |
+                filtered_df["PRODUTO/SERVIÇO"].str.lower().str.contains(search_term, na=False) |
+                filtered_df["CONTATO"].astype(str).str.contains(search_term, na=False)
+            )
+            filtered_df = filtered_df[mask]
+
+        # Filtro por categoria
+        if filters['categoria'] != "TODOS":
+            filtered_df = filtered_df[filtered_df["CATEGORIA"] == filters['categoria']]
+
+        # Filtro por status
+        if filters['status'] != "TODOS":
+            filtered_df = filtered_df[filtered_df["STATUS"] == filters['status']]
+
+        # Filtro por técnico
+        if filters['tecnico'] != "TODOS":
+            filtered_df = filtered_df[filtered_df["TECNICO"] == filters['tecnico']]
+
+        return filtered_df
+
+    def format_dataframe_for_display(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Formata DataFrame para exibição
+
+        Args:
+            df: DataFrame original
+
+        Returns:
+            DataFrame formatado
+        """
+        df_display = df.copy()
+
+        # Converter data para string
+        if df_display["DATA"].dtype != 'object':
+            df_display["DATA"] = pd.to_datetime(df_display["DATA"], errors='coerce')
+            df_display["DATA"] = df_display["DATA"].dt.strftime("%d/%m/%Y")
+
+        return df_display
+
+    def render_data_editor(self, filtered_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Renderiza editor de dados
+
+        Args:
+            filtered_df: DataFrame filtrado
+
+        Returns:
+            DataFrame editado
+        """
+        st.subheader("📊 Dados")
+
+        # Configuração das colunas
+        column_config = {
+            "DATA": st.column_config.TextColumn(
+                "Data",
+                help="Data do serviço (DD/MM/AAAA)",
+                width="small"
+            ),
+            "CLIENTE": st.column_config.TextColumn(
+                "Cliente",
+                help="Nome do cliente",
+                width="medium"
+            ),
+            "CONTATO": st.column_config.TextColumn(
+                "Contato",
+                help="Telefone ou email",
+                width="small"
+            ),
+            "STATUS": st.column_config.SelectboxColumn(
+                "Status",
+                help="Status atual do serviço",
+                width="small",
+                options=get_status_options(),
+                required=True,
+            ),
+            "PRODUTO/SERVIÇO": st.column_config.TextColumn(
+                "Produto/Serviço",
+                help="Descrição do serviço",
+                width="large"
+            ),
+            "CATEGORIA": st.column_config.SelectboxColumn(
+                "Categoria",
+                help="Categoria do serviço",
+                width="medium",
+                options=get_categoria_options(),
+                required=True,
+            ),
+            "DESPESAS": st.column_config.NumberColumn(
+                "Despesas",
+                help="Custo com peças",
+                format="R$ %.2f",
+                width="small"
+            ),
+            "FATURAMENTO": st.column_config.NumberColumn(
+                "Faturamento",
+                help="Valor cobrado",
+                format="R$ %.2f",
+                width="small"
+            ),
+            "TECNICO": st.column_config.SelectboxColumn(
+                "Técnico",
+                help="Técnico responsável",
+                width="small",
+                options=get_tecnico_options(),
+                required=True,
+            ),
+            "% DO TÉCNICO": st.column_config.SelectboxColumn(
+                "% Técnico",
+                help="Percentual de comissão",
+                width="small",
+                options=APP_CONFIG.technician_percentages,
+                required=True,
+            ),
+            "LUCRO BRUTO": st.column_config.NumberColumn(
+                "Lucro Bruto",
+                help="Faturamento - Despesas",
+                format="R$ %.2f",
+                width="small",
+                disabled=True
+            ),
+            "VALOR DO TÉCNICO": st.column_config.NumberColumn(
+                "Valor Técnico",
+                help="Comissão do técnico",
+                format="R$ %.2f",
+                width="small",
+                disabled=True
+            ),
+            "LUCRO LIQUIDO": st.column_config.NumberColumn(
+                "Lucro Líquido",
+                help="Lucro após comissões",
+                format="R$ %.2f",
+                width="small",
+                disabled=True
+            ),
+            "F/PAGAMENTO": st.column_config.SelectboxColumn(
+                "Pagamento",
+                help="Forma de pagamento",
+                width="small",
+                options=get_forma_pagamento_options(),
+                required=True,
+            ),
+        }
+
+        # Renderizar editor
+        edited_df = st.data_editor(
+            filtered_df,
+            num_rows="fixed",
+            use_container_width=True,
+            column_config=column_config,
+            hide_index=True,
+            height=600
+        )
+
+        return edited_df
+
+    def render_save_section(self, edited_df: pd.DataFrame, original_df: pd.DataFrame):
+        """
+        Renderiza seção de salvamento
+
+        Args:
+            edited_df: DataFrame editado
+            original_df: DataFrame original
+        """
+        col1, col2, col3 = st.columns([2, 1, 1])
+
+        with col1:
+            st.caption("💾 Clique em 'Salvar Alterações' para sincronizar com o Google Sheets")
+
+        with col2:
+            if st.button("🔄 Resetar", use_container_width=True, help="Descartar alterações"):
+                st.rerun()
+
+        with col3:
+            if st.button("💾 Salvar Alterações", type="primary", use_container_width=True):
+                with st.spinner("Salvando alterações..."):
+                    try:
+                        DataInserter().update_data(edited_df, original_df)
+                        st.success("✅ Dados salvos com sucesso!")
+                        st.balloons()
+                        DataLoader.clear_cache()
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Erro ao salvar dados: {e}")
+
+    def render_tips(self):
+        """Renderiza dicas de uso"""
+        with st.expander("💡 Dicas de Uso", expanded=False):
+            st.markdown("""
+            ### Como usar esta tabela:
+
+            **🔍 Busca e Filtros:**
+            - Use a busca para encontrar serviços por cliente, técnico ou produto
+            - Combine múltiplos filtros para refinar os resultados
+            - Os filtros de data estão disponíveis na barra lateral
+
+            **✏️ Edição:**
+            - Clique em qualquer célula editável para modificar
+            - Campos calculados (Lucro Bruto, Valor Técnico, Lucro Líquido) são automáticos
+            - Não esqueça de clicar em "Salvar Alterações" quando terminar
+
+            **📥 Exportação:**
+            - Use o botão "Baixar CSV" no topo para exportar os dados
+            - O arquivo incluirá todos os registros (não apenas os filtrados)
+
+            **⚠️ Importante:**
+            - As alterações só são salvas após clicar em "Salvar Alterações"
+            - Use "Resetar" para descartar mudanças não salvas
+            - A sincronização com Google Sheets pode levar alguns segundos
+            """)
+
+    def main(self):
+        """Método principal"""
+        # Header
+        self.render_header()
+
+        st.divider()
+
+        # Filtro de data na sidebar
+        date_filter = DateFilter(self.data, "DATA")
+        filtered_by_date = date_filter.filter_by_date()
+
+        # KPIs resumidos
+        self.render_summary_kpis(filtered_by_date)
+
+        st.divider()
+
+        # Filtros
+        filters = self.render_filters(filtered_by_date)
+
+        # Aplicar filtros
+        filtered_df = self.apply_filters(filtered_by_date, filters)
+
+        # Mensagem de resultados
+        total_results = len(filtered_df)
+        if total_results == 0:
+            InsightBox.render_warning(
+                "Nenhum serviço encontrado com os filtros aplicados. "
+                "Tente ajustar os critérios de busca."
+            )
+        else:
+            if total_results < len(filtered_by_date):
+                InsightBox.render_info(
+                    f"Exibindo {total_results} de {len(filtered_by_date)} serviços "
+                    f"(filtrados de {len(self.data)} no total)"
+                )
+
+        st.divider()
+
+        # Formatar para exibição
+        display_df = self.format_dataframe_for_display(filtered_df)
+
+        # Editor de dados
+        if not display_df.empty:
+            edited_df = self.render_data_editor(display_df)
+
+            st.divider()
+
+            # Seção de salvamento
+            self.render_save_section(edited_df, self.data)
+        else:
+            st.info("📭 Nenhum dado para exibir.")
+
+        st.divider()
+
+        # Dicas
+        self.render_tips()
 
 
 if __name__ == "__main__":
-    app = ServiceTableApp()
-    app.run()
+    app = ServiceTableV2()
+    app.main()

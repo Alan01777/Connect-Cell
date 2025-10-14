@@ -1,654 +1,543 @@
+"""
+Dashboard Financeiro e Operacional - Connect-Cell
+Versão Refatorada e Otimizada
+"""
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
 
-from utils import DataLoader, DateFilter, Formatting
+# Imports locais
+from utils import (
+    DataLoader, DateFilter, Formatting,
+    ThemeManager, MetricCard, ChartContainer, InsightBox,
+    KPIRow, ExportButton, DataAnalyzer, InsightGenerator, MetricsCalculator
+)
 from settings import page_settings
-from streamlit_extras.stylable_container import stylable_container
+from config import COLORS, CHART_CONFIG, CATEGORY_DISPLAY_NAMES
 
 
+class DashboardV2:
+    """Dashboard refatorado com melhorias de performance e UX"""
 
-class Dashboard:
     def __init__(self):
+        """Inicializa o dashboard"""
         page_settings("Dashboard", "📊")
-        self.df = DataLoader().load_data()
-        self.colors = {
-            "blue": "#1f77b4",
-            "red": "#d62728",
-            "green": "#2ca02c",
-            "purple": "#9467bd",
-            "orange": "#ff7f0e",
-            "yellow": "#ffbb78",
-        }
+        ThemeManager.inject_custom_css()
 
-    def display_general_info(self, data):
-        with stylable_container(
-            key="Informações_Gerais",
-            css_styles="""
-                {
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    border-radius: 0.5rem;
-                    padding: calc(1em - 1px);
-                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
-                    background-color: #f9f9f9;
-                }
-            """,
-        ):
-            df = data
+        # Carregar dados com loading state
+        with st.spinner("📊 Carregando dados..."):
+            self.df = DataLoader().load_data()
 
-            st.header("Informações Gerais")
+        if self.df.empty:
+            st.error("❌ Não foi possível carregar os dados. Verifique a conexão com o Google Sheets.")
+            st.stop()
 
-            with st.container(border=True):
-                st.metric(
-                    "Total de serviços",
-                    len(df.index),
-                )
+    def render_header(self):
+        """Renderiza cabeçalho do dashboard"""
+        st.markdown("\n")
+        col1, col2, col3 = st.columns([3, 1, 1])
 
-            with st.container(border=True):
-                st.metric("Despesas", Formatting.format_monetary(df["DESPESAS"].sum()))
+        with col1:
+            st.title("📊 Dashboard Financeiro e Operacional")
+            st.markdown("*Análise em tempo real dos dados da Connect-Cell*")
 
-            with st.container(border=True):
-                st.metric(
-                    "Faturamento",
-                    Formatting.format_monetary(df["FATURAMENTO"].sum()),
-                )
+        with col2:
+            if st.button("🔄 Atualizar Dados", use_container_width=True):
+                DataLoader.clear_cache()
+                st.rerun()
 
-            with st.container(border=True):
-                st.metric(
-                    "Lucro", Formatting.format_monetary(df["LUCRO LIQUIDO"].sum())
-                )
-
-            with st.container():
-                st.caption(
-                    """
-                            As métricas acima mostram dados financeiros gerais, incluindo o número total de serviços, gastos com peças, valor total recebido e LUCRO LIQUIDO.
-                        """
-                )
-
-    def details_by_category(self, data):
-        with stylable_container(
-            key="Detalhes_por_categoria",
-            css_styles="""
-                {
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    border-radius: 0.5rem;
-                    padding: calc(1em - 1px);
-                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
-                    background-color: #f9f9f9;
-                }
-            """,
-        ):
-            st.header("Detalhes por categoria")
-            df = data
-            category = {
-                "Reparos de Hardware": df[df["CATEGORIA"] == "REPAROS HARDWARE"],
-                "Reparos de Software": df[df["CATEGORIA"] == "REPAROS SOFTWARE"],
-                "Vendas de Dispositivos": df[df["CATEGORIA"] == "VENDAS DISPOSITIVOS"],
-                "Vendas de Hardware": df[df["CATEGORIA"] == "VENDAS HARDWARE"],
-                "Vendas de Acessórios": df[df["CATEGORIA"] == "VENDAS ACESSÓRIOS"],
-                "Outros": df[df["CATEGORIA"] == "OUTROS"],
-            }
-
-            for name, data in category.items():
-                with st.container(border=True):
-                    st.subheader(name)
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric(
-                            "Número de serviços",
-                            len(data.index),
-                        )
-                    with col2:
-                        st.metric(
-                            "Lucro",
-                            Formatting.format_monetary(data["LUCRO LIQUIDO"].sum()),
-                        )
-            with st.container():
-                st.caption(
-                    """
-                    O painel acima mostra um resumo do número total de serviços e o lucro final por categoria.
-                """
-                )
-
-    def details_by_technician(self, data):
-        with stylable_container(
-            key="Detalhes_por_técnico",
-            css_styles="""
-                {
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    border-radius: 0.5rem;
-                    padding: calc(1em - 1px);
-                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
-                    background-color: #f9f9f9;
-                }
-            """,
-        ):
-            # convert the cartegory names to normal names
-            data["CATEGORIA"] = data["CATEGORIA"].apply(
-                lambda x: "R. Hardware"
-                if x == "REPAROS HARDWARE"
-                else "R. de Software"
-                if x == "REPAROS SOFTWARE"
-                else "V. de Dispositivos"
-                if x == "VENDAS DISPOSITIVOS"
-                else "V. de Hardware"
-                if x == "VENDAS HARDWARE"
-                else "V. de Acessórios"
-                if x == "VENDAS ACESSÓRIOS"
-                else "Outros"
-                if x == "OUTROS"
-                else x
+        with col3:
+            ExportButton.render_csv_download(
+                self.df,
+                f"connect_cell_data_{datetime.now().strftime('%Y%m%d')}.csv"
             )
-            
-            st.subheader("Detalhes por técnico")
-            df = data
-            technicians = {
-                "Tiago": df[df["TECNICO"] == "TIAGO"],
-                "VALDERI": df[df["TECNICO"] == "VALDERI"],
-                # Add more technicians here if needed
-            }
-            category = data["CATEGORIA"].mode().values[0]
-            for name, data in technicians.items():
-                with st.container(border=True):
-                    st.write(name)
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric(
-                            "Número de Serviços",
-                            len(data.index),
-                        )
-                        st.metric("Categoria em que mais trabalhou: ", category)
-                    with col2:
-                        st.metric(
-                            "Receita Acumulada",
-                            Formatting.format_monetary(data["VALOR DO TÉCNICO"].sum()),
-                        )
-                        st.metric("Numero de serviços da categoria: ", data["CATEGORIA"].value_counts().max())
-                    
-            with st.container():
-                st.caption(
-                    "O Painel acima mostra um resumo do número total de serviços e a receita acumulada por técnico."
-                )
 
-    def display_profit_trend(self, data):
-        col1, col2 = st.columns([4, 2], gap="small")
+    def render_insights_panel(self, filtered_df: pd.DataFrame):
+        """Renderiza painel de insights automáticos"""
+        st.subheader("💡 Insights Automáticos")
 
-        with col1:
+        financial_insights = InsightGenerator.generate_financial_insights(filtered_df)
+        operational_insights = InsightGenerator.generate_operational_insights(filtered_df)
 
-            with stylable_container(
-                key="Tenência_do_Faturamento_Despesas",
-                css_styles="""
-                {
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    border-radius: 0.5rem;
-                    padding: calc(1em - 1px);
-                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
-                    background-color: #f9f9f9;
-                }
-                """,
-            ):
-                df = data
-                st.header("Análise mensal de desempenho financeiro")
-
-                df = df.rename(
-                    columns={
-                        "DESPESAS": "Despesas",
-                        "FATURAMENTO": "Faturamento",
-                        "LUCRO LIQUIDO": "Lucro",
-                    }
-                )
-
-                df_melt = df.melt(
-                    id_vars=["DATA"],
-                    value_vars=["Despesas", "Faturamento", "Lucro"],
-                    var_name="Tipo",
-                    value_name="Valor",
-                )
-
-                df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
-                df_melt.set_index("DATA", inplace=True)
-                df_melt = (
-                    df_melt.groupby([pd.Grouper(freq="M"), "Tipo"]).sum().reset_index()
-                )
-
-                fig = px.line(
-                    df_melt,
-                    x="DATA",
-                    y="Valor",
-                    color="Tipo",
-                    markers=True,
-                    width=1050,
-                    height=483,
-                    color_discrete_map={
-                        "Despesas": self.colors["red"],
-                        "Faturamento": self.colors["green"],
-                        "Lucro": self.colors["blue"],
-                    },
-                )
-                fig.update_layout(
-                    xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)"
-                )
-                st.plotly_chart(fig)
-                st.caption(
-                    """
-                O gráfico acima mostra a análise mensal de desempenho financeiro ao longo do tempo.
-            """
-                )
-        with col2:
-            self.display_general_info(data)
-
-    def display_category_performance(self, data):
-        df = data
-        st.header("Faturamento por categoria")
-        df_melt = df.melt(id_vars=["DATA", "CATEGORIA"], value_vars=["FATURAMENTO"])
-        df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
-        df_melt.set_index("DATA", inplace=True)
-        df_melt = (
-            df_melt.groupby([pd.Grouper(freq="M"), "CATEGORIA"]).sum().reset_index()
-        )
-
-        df_melt.set_index(["DATA", "CATEGORIA"], inplace=True)
-        df_melt = df_melt.reindex(
-            pd.MultiIndex.from_product(
-                [
-                    pd.date_range(
-                        start=df_melt.index.get_level_values("DATA").min(),
-                        end=df_melt.index.get_level_values("DATA").max(),
-                        freq="M",
-                    ),
-                    df_melt.index.get_level_values("CATEGORIA").unique(),
-                ],
-                names=["DATA", "CATEGORIA"],
-            ),
-            fill_value=0,
-        ).reset_index()
-
-        fig = px.line(
-            df_melt,
-            x="DATA",
-            y="value",
-            # text="value",
-            color="CATEGORIA",
-            markers=True,
-            width=1050,
-            height=425,
-            color_discrete_map={
-                "REPAROS HARDWARE": self.colors["blue"],
-                "REPAROS SOFTWARE": self.colors["purple"],
-                "VENDAS DISPOSITIVOS": self.colors["green"],
-                "VENDAS HARDWARE": self.colors["yellow"],
-                "VENDAS ACESSÓRIOS": self.colors["orange"],
-                "OUTROS": self.colors["red"],
-            },
-        )
-        fig.update_traces(textposition="top right", texttemplate="R$ %{y:.2f}")
-        fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
-        st.plotly_chart(fig)
-        st.caption(
-            """
-                    O gráfico acima mostra o desempenho financeiro das categorias de serviço ao longo do tempo. 
-                """
-        )
-
-    def display_category_expenses(self, data):
-        df = data
-        st.header("Despesas por categoria")
-        df_melt = df.melt(id_vars=["DATA", "CATEGORIA"], value_vars=["DESPESAS"])
-        df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
-        df_melt.set_index("DATA", inplace=True)
-        df_melt = (
-            df_melt.groupby([pd.Grouper(freq="M"), "CATEGORIA"]).sum().reset_index()
-        )
-
-        df_melt.set_index(["DATA", "CATEGORIA"], inplace=True)
-
-        df_melt = df_melt.reindex(
-            pd.MultiIndex.from_product(
-                [
-                    pd.date_range(
-                        start=df_melt.index.get_level_values("DATA").min(),
-                        end=df_melt.index.get_level_values("DATA").max(),
-                        freq="M",
-                    ),
-                    df_melt.index.get_level_values("CATEGORIA").unique(),
-                ],
-                names=["DATA", "CATEGORIA"],
-            ),
-            fill_value=0,
-        ).reset_index()
-
-        fig = px.line(
-            df_melt,
-            x="DATA",
-            y="value",
-            color="CATEGORIA",
-            markers=True,
-            width=1050,
-            height=425,
-            color_discrete_map={
-                "REPAROS HARDWARE": self.colors["blue"],
-                "REPAROS SOFTWARE": self.colors["purple"],
-                "VENDAS DISPOSITIVOS": self.colors["green"],
-                "VENDAS HARDWARE": self.colors["yellow"],
-                "VENDAS ACESSÓRIOS": self.colors["orange"],
-                "OUTROS": self.colors["red"],
-            },
-        )
-        fig.update_layout(xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)")
-        st.plotly_chart(fig)
-        st.caption(
-            """
-                    O gráfico acima mostra as despesas por categoria ao longo do tempo.
-                """
-        )
-
-    def display_technician_performance(self, data):
-        col1, col2 = st.columns([4, 2], gap="small")
-        df = data
-        with col1:
-            with stylable_container(
-                key="Tenência_do_Faturamento_Despesas",
-                css_styles="""
-                {
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    border-radius: 0.5rem;
-                    padding: calc(1em - 1px);
-                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
-                    background-color: #f9f9f9;
-                }
-                """,
-            ):
-                st.header("Receita Mensal por Técnico")
-                df_melt = df.melt(
-                    id_vars=["DATA", "TECNICO"], value_vars=["VALOR DO TÉCNICO"]
-                )
-                df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
-                df_melt = df.melt(
-                    id_vars=["DATA", "TECNICO"], value_vars=["VALOR DO TÉCNICO"]
-                )
-                df_melt["DATA"] = pd.to_datetime(df_melt["DATA"])
-                df_melt.set_index("DATA", inplace=True)
-                df_melt = (
-                    df_melt.groupby([pd.Grouper(freq="M"), "TECNICO"])
-                    .sum()
-                    .reset_index()
-                )
-
-                df_melt.set_index(["DATA", "TECNICO"], inplace=True)
-                df_melt = df_melt
-                df_melt = df_melt.reindex(
-                    pd.MultiIndex.from_product(
-                        [
-                            pd.date_range(
-                                start=df_melt.index.get_level_values("DATA").min(),
-                                end=df_melt.index.get_level_values("DATA").max(),
-                                freq="M",
-                            ),
-                            df_melt.index.get_level_values("TECNICO").unique(),
-                        ],
-                        names=["DATA", "TECNICO"],
-                    ),
-                    fill_value=0,
-                ).reset_index()
-
-                fig = px.line(
-                    df_melt,
-                    x="DATA",
-                    y="value",
-                    color="TECNICO",
-                    markers=True,
-                    width=1050,
-                    height=485,
-                    color_discrete_map={
-                        "TIAGO": self.colors["blue"],
-                        "VALDERI": self.colors["red"],
-                    },
-                )
-                fig.update_layout(
-                    xaxis_title="PERÍODO DE TEMPO", yaxis_title="VALOR (R$)"
-                )
-                st.plotly_chart(fig)
-                st.caption(
-                    """
-                    Este gráfico mostra a receita mensal de cada técnico ao longo do tempo. As linhas representam a receita mensal de cada técnico.
-                    """
-                )
-        with col2:
-            self.details_by_technician(data)
-
-    def display_data_distribution(self, data):
-        df = data
         col1, col2 = st.columns(2)
 
         with col1:
-            with stylable_container(
-                key="Formas_de_Pagamento_Status",
-                css_styles="""
-                {
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    border-radius: 0.5rem;
-                    padding: calc(1em - 1px);
-                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
-                    background-color: #f9f9f9;
-                }
-                """,
-            ):
-                st.header("Formas de pagamento")
-                df_filtered = df.dropna(subset=["F/PAGAMENTO"])
-                if not df_filtered.empty:
-                    fig = px.histogram(
-                        df_filtered,
-                        x="F/PAGAMENTO",
-                        histnorm="percent",
-                        text_auto=".1f",
-                        width=800,
-                        nbins=len(df_filtered["F/PAGAMENTO"].unique()),
-                        color_discrete_sequence=[self.colors["blue"]],
-                    )
-                    fig.update_layout(
-                        xaxis_title="Formas de pagamento",
-                        yaxis_title="Porcentagem (%)",
-                        font=dict(
-                            size=18,  # Set the font size here
-                            color="black",
-                        ),
-                    )
-                    st.plotly_chart(fig)
-                else:
-                    st.write("Nenhum dado disponível.")
-                st.caption(
-                    "O gráfico acima mostra a distribuição de dados relacionados às formas de pagamento. Dados ausentes foram ignorados."
-                )
+            st.markdown("**📈 Insights Financeiros**")
+            for insight in financial_insights:
+                InsightBox.render_info(insight)
 
         with col2:
-            with stylable_container(
-                key="Status_de_Serviço",
-                css_styles="""
-                {
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    border-radius: 0.5rem;
-                    padding: calc(1em - 1px);
-                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
-                    background-color: #f9f9f9;
-                }
-                """,
+            st.markdown("**⚙️ Insights Operacionais**")
+            for insight in operational_insights:
+                InsightBox.render_info(insight)
+
+    def render_kpi_row(self, df: pd.DataFrame):
+        """Renderiza linha de KPIs principais"""
+        kpis = MetricsCalculator.calculate_kpis(df)
+        comparison = DataAnalyzer.calculate_period_comparison(df, value_column="FATURAMENTO")
+
+        # Formatar delta
+        delta_revenue = f"{comparison['variation']:+.1f}% vs mês anterior"
+
+        kpi_data = [
+            {
+                "label": "Faturamento Total",
+                "value": Formatting.format_monetary(kpis['total_revenue']),
+                "delta": delta_revenue,
+                "icon": "💰"
+            },
+            {
+                "label": "Lucro Líquido",
+                "value": Formatting.format_monetary(kpis['total_profit']),
+                "delta": f"{kpis['profit_margin']:.1f}% margem",
+                "icon": "📊"
+            },
+            {
+                "label": "Total de Serviços",
+                "value": f"{kpis['total_services']:,}",
+                "delta": f"Ticket médio: {Formatting.format_monetary(kpis['avg_ticket'])}",
+                "icon": "🔧"
+            },
+            {
+                "label": "Despesas",
+                "value": Formatting.format_monetary(kpis['total_expenses']),
+                "delta": None,
+                "icon": "💸"
+            },
+        ]
+
+        KPIRow.render(kpi_data)
+
+    def render_financial_trend_chart(self, df: pd.DataFrame):
+        """Renderiza gráfico de tendência financeira"""
+        df_copy = df.copy()
+        df_copy["DATA"] = pd.to_datetime(df_copy["DATA"], format="%d/%m/%Y", errors='coerce')
+
+        df_renamed = df_copy.rename(columns={
+            "DESPESAS": "Despesas",
+            "FATURAMENTO": "Faturamento",
+            "LUCRO LIQUIDO": "Lucro"
+        })
+
+        df_melt = df_renamed.melt(
+            id_vars=["DATA"],
+            value_vars=["Despesas", "Faturamento", "Lucro"],
+            var_name="Tipo",
+            value_name="Valor"
+        )
+
+        df_melt.set_index("DATA", inplace=True)
+        df_monthly = df_melt.groupby([pd.Grouper(freq="M"), "Tipo"]).sum().reset_index()
+
+        fig = px.line(
+            df_monthly,
+            x="DATA",
+            y="Valor",
+            color="Tipo",
+            markers=True,
+            color_discrete_map={
+                "Despesas": COLORS.red,
+                "Faturamento": COLORS.green,
+                "Lucro": COLORS.blue,
+            },
+        )
+
+        fig.update_layout(
+            xaxis_title="Período",
+            yaxis_title="Valor (R$)",
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            autosize=True,
+            height=CHART_CONFIG.default_height,
+            margin=dict(l=0, r=0, t=30, b=0)
+        )
+
+        fig.update_traces(
+            hovertemplate="<b>%{fullData.name}</b><br>R$ %{y:,.2f}<extra></extra>"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    def render_category_performance(self, df: pd.DataFrame):
+        """Renderiza análise de performance por categoria"""
+        df_copy = df.copy()
+        df_copy["DATA"] = pd.to_datetime(df_copy["DATA"], format="%d/%m/%Y", errors='coerce')
+
+        df_melt = df_copy.melt(
+            id_vars=["DATA", "CATEGORIA"],
+            value_vars=["FATURAMENTO"]
+        )
+
+        df_melt.set_index("DATA", inplace=True)
+        df_monthly = df_melt.groupby([pd.Grouper(freq="M"), "CATEGORIA"]).sum().reset_index()
+
+        # Preencher valores ausentes
+        df_monthly.set_index(["DATA", "CATEGORIA"], inplace=True)
+        df_monthly = df_monthly.reindex(
+            pd.MultiIndex.from_product(
+                [
+                    pd.date_range(
+                        start=df_monthly.index.get_level_values("DATA").min(),
+                        end=df_monthly.index.get_level_values("DATA").max(),
+                        freq="M"
+                    ),
+                    df_monthly.index.get_level_values("CATEGORIA").unique(),
+                ],
+                names=["DATA", "CATEGORIA"]
+            ),
+            fill_value=0
+        ).reset_index()
+
+        fig = px.line(
+            df_monthly,
+            x="DATA",
+            y="value",
+            color="CATEGORIA",
+            markers=True,
+            color_discrete_map=COLORS.category_colors
+        )
+
+        fig.update_layout(
+            xaxis_title="Período",
+            yaxis_title="Faturamento (R$)",
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            autosize=True,
+            height=CHART_CONFIG.default_height,
+            margin=dict(l=0, r=0, t=30, b=0)
+        )
+
+        fig.update_traces(
+            hovertemplate="<b>%{fullData.name}</b><br>R$ %{y:,.2f}<extra></extra>"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    def render_category_details(self, df: pd.DataFrame):
+        """Renderiza detalhes por categoria"""
+        st.subheader("Detalhes por Categoria")
+
+        categories = df["CATEGORIA"].unique()
+
+        for category in categories:
+            category_data = df[df["CATEGORIA"] == category]
+
+            with st.expander(
+                f"📦 {CATEGORY_DISPLAY_NAMES.get(category, category)} "
+                f"({len(category_data)} serviços)",
+                expanded=False
             ):
-                st.header("Status de serviço")
-                df_filtered = df.dropna(subset=["STATUS"])
-                if not df_filtered.empty:
-                    fig = px.histogram(
-                        df_filtered,
-                        y="STATUS",
-                        width=800,
-                        text_auto=".1f",
-                        orientation="h",
-                        histnorm="percent",
-                        nbins=len(df_filtered["STATUS"].unique()),
-                        color_discrete_sequence=[self.colors["blue"]],
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    MetricCard.render(
+                        "Faturamento",
+                        Formatting.format_monetary(category_data["FATURAMENTO"].sum())
                     )
-                    fig.update_layout(
-                        xaxis_title="Porcentagem (%)",
-                        yaxis_title="Status de serviço",
-                        font=dict(
-                            size=18,  # Set the font size here
-                            color="black",
-                        ),
+
+                with col2:
+                    MetricCard.render(
+                        "Lucro Líquido",
+                        Formatting.format_monetary(category_data["LUCRO LIQUIDO"].sum())
                     )
-                    st.plotly_chart(fig)
-                else:
-                    st.write("Nenhum dado disponível.")
-                st.caption(
-                    "O gráfico acima mostra a distribuição de dados relacionados aos statuss dos serviços. Dados ausentes foram ignorados."
-                )
 
-    def display_service_distribution(self, data):
-        with stylable_container(
-            key="Distribuição_de_Serviços",
-            css_styles="""
-                {
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    border-radius: 0.5rem;
-                    padding: calc(1em - 1px);
-                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
-                    background-color: #f9f9f9;
-                }
-            """,
-        ):
-            df = data
-            st.header("Distribuição de serviços")
-            df_filtered = df.dropna(subset=["PRODUTO/SERVIÇO"])
-            df_filtered = df_filtered.groupby("TECNICO").agg(
-                {"PRODUTO/SERVIÇO": "count"}
+                with col3:
+                    MetricCard.render(
+                        "Ticket Médio",
+                        Formatting.format_monetary(category_data["FATURAMENTO"].mean())
+                    )
+
+    def render_technician_performance(self, df: pd.DataFrame):
+        """Renderiza análise de performance por técnico"""
+        df_copy = df.copy()
+        df_copy["DATA"] = pd.to_datetime(df_copy["DATA"], format="%d/%m/%Y", errors='coerce')
+
+        df_melt = df_copy.melt(
+            id_vars=["DATA", "TECNICO"],
+            value_vars=["VALOR DO TÉCNICO"]
+        )
+
+        df_melt.set_index("DATA", inplace=True)
+        df_monthly = df_melt.groupby([pd.Grouper(freq="M"), "TECNICO"]).sum().reset_index()
+
+        # Preencher valores ausentes
+        df_monthly.set_index(["DATA", "TECNICO"], inplace=True)
+        df_monthly = df_monthly.reindex(
+            pd.MultiIndex.from_product(
+                [
+                    pd.date_range(
+                        start=df_monthly.index.get_level_values("DATA").min(),
+                        end=df_monthly.index.get_level_values("DATA").max(),
+                        freq="M"
+                    ),
+                    df_monthly.index.get_level_values("TECNICO").unique(),
+                ],
+                names=["DATA", "TECNICO"]
+            ),
+            fill_value=0
+        ).reset_index()
+
+        fig = px.line(
+            df_monthly,
+            x="DATA",
+            y="value",
+            color="TECNICO",
+            markers=True,
+            color_discrete_map=COLORS.technician_colors
+        )
+
+        fig.update_layout(
+            xaxis_title="Período",
+            yaxis_title="Receita do Técnico (R$)",
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            autosize=True,
+            height=CHART_CONFIG.default_height,
+            margin=dict(l=0, r=0, t=30, b=0)
+        )
+
+        fig.update_traces(
+            hovertemplate="<b>%{fullData.name}</b><br>R$ %{y:,.2f}<extra></extra>"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    def render_technician_details(self, df: pd.DataFrame):
+        """Renderiza detalhes por técnico"""
+        st.subheader("Detalhes por Técnico")
+
+        technicians = df["TECNICO"].unique()
+
+        cols = st.columns(len(technicians))
+
+        for idx, technician in enumerate(technicians):
+            tech_data = df[df["TECNICO"] == technician]
+            top_category = tech_data.groupby("CATEGORIA")["FATURAMENTO"].sum().idxmax()
+
+            with cols[idx]:
+                with st.container(border=True):
+                    st.markdown(f"### 👨‍🔧 {technician}")
+
+                    MetricCard.render(
+                        "Serviços Realizados",
+                        f"{len(tech_data):,}"
+                    )
+
+                    MetricCard.render(
+                        "Receita Acumulada",
+                        Formatting.format_monetary(tech_data["VALOR DO TÉCNICO"].sum())
+                    )
+
+                    st.markdown(f"**Especialidade:** {CATEGORY_DISPLAY_NAMES.get(top_category, top_category)}")
+
+    def render_distribution_charts(self, df: pd.DataFrame):
+        """Renderiza gráficos de distribuição"""
+        col1, col2 = st.columns(2)
+
+        with col1:
+            ChartContainer.render(
+                "Formas de Pagamento",
+                lambda: self._render_payment_distribution(df),
+                "Distribuição dos métodos de pagamento utilizados"
             )
 
-            if not df_filtered.empty:
-                fig = px.pie(
-                    df_filtered,
-                    values="PRODUTO/SERVIÇO",
-                    width=800,
-                    height=450,
-                    names=df_filtered.index,
-                    color_discrete_map={
-                        "TIAGO": self.colors["blue"],
-                        "VALDERI": self.colors["red"],
-                    },
-                    hole=0.4,
-                )
-                fig.update_traces(
-                    textposition="inside", textinfo="percent", textfont_size=18
-                )
-                st.plotly_chart(fig)
-            else:
-                st.write("Nenhum dado disponível.")
-            st.caption(
-                """
-                O gráfico acima mostra a distribuição de serviços entre os técnicos. 
-            """
+        with col2:
+            ChartContainer.render(
+                "Status dos Serviços",
+                lambda: self._render_status_distribution(df),
+                "Distribuição dos serviços por status"
             )
 
-    def display_top_clients(self, data):
-        with stylable_container(
-            key="Top_10_Clientes",
-            css_styles="""
-                {
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    border-radius: 0.5rem;
-                    padding: calc(1em - 1px);
-                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
-                    background-color: #f9f9f9;
-                }
-            """,
-        ):
-            df = data
-            st.header("Top 10 clientes")
+    def _render_payment_distribution(self, df: pd.DataFrame):
+        """Renderiza distribuição de formas de pagamento"""
+        df_filtered = df.dropna(subset=["F/PAGAMENTO"])
 
-            top_clients = df.groupby("CLIENTE").agg(
-                {"FATURAMENTO": "sum", "PRODUTO/SERVIÇO": "count"}
+        if not df_filtered.empty:
+            fig = px.histogram(
+                df_filtered,
+                x="F/PAGAMENTO",
+                histnorm="percent",
+                text_auto=".1f",
+                color_discrete_sequence=[COLORS.blue]
             )
 
-            top_clients.columns = ["Valor Total Gasto", "Número de Serviços"]
-
-            top_clients = top_clients.sort_values(
-                "Valor Total Gasto", ascending=False
-            ).head(10)
-
-            top_clients["Valor Total Gasto"] = top_clients["Valor Total Gasto"].apply(
-                lambda x: f"R$ {x:,.2f}",
+            fig.update_layout(
+                xaxis_title="Forma de Pagamento",
+                yaxis_title="Porcentagem (%)",
+                showlegend=False,
+                autosize=True,
+                height=400,
+                margin=dict(l=0, r=0, t=30, b=0)
             )
 
-            top_clients["Número de Serviços"] = top_clients[
-                "Número de Serviços"
-            ].astype(int)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Nenhum dado disponível")
 
-            st.dataframe(top_clients, width=800)
-            st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.caption(
-                """
-                A tabela acima mostra os 10 principais clientes com base no valor total gasto.
-            """
+    def _render_status_distribution(self, df: pd.DataFrame):
+        """Renderiza distribuição de status"""
+        df_filtered = df.dropna(subset=["STATUS"])
+
+        if not df_filtered.empty:
+            fig = px.histogram(
+                df_filtered,
+                y="STATUS",
+                orientation="h",
+                histnorm="percent",
+                text_auto=".1f",
+                color_discrete_sequence=[COLORS.green]
             )
+
+            fig.update_layout(
+                xaxis_title="Porcentagem (%)",
+                yaxis_title="Status",
+                showlegend=False,
+                autosize=True,
+                height=400,
+                margin=dict(l=0, r=0, t=30, b=0)
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Nenhum dado disponível")
+
+    def render_additional_insights(self, df: pd.DataFrame):
+        """Renderiza insights adicionais"""
+        col1, col2 = st.columns([1, 1])
+
+        with col1:
+            ChartContainer.render(
+                "Distribuição de Serviços por Técnico",
+                lambda: self._render_service_distribution(df),
+                "Proporção de serviços realizados por cada técnico"
+            )
+
+        with col2:
+            ChartContainer.render(
+                "Top 10 Clientes",
+                lambda: self._render_top_clients(df),
+                "Clientes com maior volume de faturamento"
+            )
+
+    def _render_service_distribution(self, df: pd.DataFrame):
+        """Renderiza distribuição de serviços por técnico"""
+        df_filtered = df.dropna(subset=["PRODUTO/SERVIÇO"])
+        df_grouped = df_filtered.groupby("TECNICO").size().reset_index(name="count")
+
+        if not df_grouped.empty:
+            fig = px.pie(
+                df_grouped,
+                values="count",
+                names="TECNICO",
+                color="TECNICO",
+                color_discrete_map=COLORS.technician_colors,
+                hole=0.4
+            )
+
+            fig.update_traces(
+                textposition="inside",
+                textinfo="percent+label",
+                textfont_size=14
+            )
+
+            fig.update_layout(
+                autosize=True,
+                height=450,
+                margin=dict(l=0, r=0, t=30, b=0)
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Nenhum dado disponível")
+
+    def _render_top_clients(self, df: pd.DataFrame):
+        """Renderiza top 10 clientes"""
+        top_clients = df.groupby("CLIENTE").agg({
+            "FATURAMENTO": "sum",
+            "PRODUTO/SERVIÇO": "count"
+        }).sort_values("FATURAMENTO", ascending=False).head(10)
+
+        top_clients.columns = ["Faturamento Total", "Nº Serviços"]
+        top_clients["Faturamento Total"] = top_clients["Faturamento Total"].apply(
+            lambda x: Formatting.format_monetary(x)
+        )
+
+        st.dataframe(top_clients, use_container_width=True, height=450)
 
     def main(self):
-        st.title("Dashboard Financeiro e operacional")
-        st.write(
-            """
-            Os gráficos abaixo são baseados nos dados financeiros e operacionais fornecidos pela empresa.
-        """
+        """Método principal que renderiza o dashboard"""
+        # Header
+        self.render_header()
+
+        # Filtro de data na sidebar
+        date_filter = DateFilter(self.df, "DATA")
+        filtered_df = date_filter.filter_by_date()
+
+        # Insights automáticos
+        st.divider()
+        self.render_insights_panel(filtered_df)
+
+        # KPIs principais
+        st.divider()
+        self.render_kpi_row(filtered_df)
+
+        # Análise Financeira
+        st.divider()
+        st.header("📈 Análise Financeira Mensal")
+
+        # Gráfico principal em largura completa
+        ChartContainer.render(
+            "Desempenho Financeiro ao Longo do Tempo",
+            lambda: self.render_financial_trend_chart(filtered_df),
+            "Evolução mensal de faturamento, despesas e lucro"
         )
 
-        df = self.df
+        # Detalhes por categoria em seção separada
+        st.divider()
+        self.render_category_details(filtered_df)
 
-        date_filter = DateFilter(df, "DATA")
-        df = date_filter.filter_by_date()
+        # Análise por Categoria
+        st.divider()
+        st.header("📦 Análise por Categoria")
 
-        self.display_profit_trend(df)
+        ChartContainer.render(
+            "Faturamento por Categoria",
+            lambda: self.render_category_performance(filtered_df),
+            "Evolução do faturamento de cada categoria ao longo do tempo"
+        )
 
-        st.caption("---")
+        # Análise por Técnico
+        st.divider()
+        st.header("👨‍🔧 Análise por Técnico")
 
-        col1, col2 = st.columns([4, 2], gap="small")
-        with col1:
-            with stylable_container(
-                key="Categoria_Performance_Expenses",
-                css_styles="""
-                {
-                    border: 1px solid rgba(49, 51, 63, 0.2);
-                    border-radius: 0.5rem;
-                    padding: calc(1em - 1px);
-                    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.3);
-                    background-color: #f9f9f9;
-                }
-                """,
-            ):
-                self.display_category_performance(df)
+        # Gráfico de desempenho em largura completa
+        ChartContainer.render(
+            "Receita Mensal por Técnico",
+            lambda: self.render_technician_performance(filtered_df),
+            "Evolução da receita de cada técnico ao longo do tempo"
+        )
 
-                with st.container():
-                    st.markdown("---")
-                self.display_category_expenses(df)
+        # Detalhes dos técnicos abaixo do gráfico
+        st.markdown("---")
+        self.render_technician_details(filtered_df)
 
-        with col2:
-            self.details_by_category(df)
+        # Distribuições
+        st.divider()
+        st.header("📊 Distribuições")
+        self.render_distribution_charts(filtered_df)
 
-        st.caption("---")
+        # Insights adicionais
+        st.divider()
+        st.header("🔍 Análises Complementares")
+        self.render_additional_insights(filtered_df)
 
-        self.display_technician_performance(df)
-
-        st.caption("---")
-
-        self.display_data_distribution(df)
-
-        st.caption("---")
-
-        col1, col2 = st.columns(2)
-        with col1:
-            self.display_service_distribution(df)
-
-        with col2:
-            self.display_top_clients(df)
+        # Footer
+        st.divider()
+        st.caption("📱 Connect-Cell Dashboard | Atualizado em tempo real")
 
 
 if __name__ == "__main__":
-    dashboard = Dashboard()
+    dashboard = DashboardV2()
     dashboard.main()
